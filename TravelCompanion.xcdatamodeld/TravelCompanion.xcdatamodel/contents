@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="22G91" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="User" representedClassName="User" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="email" attributeType="String"/>
+        <attribute name="displayName" attributeType="String"/>
+        <attribute name="avatarURL" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isActive" attributeType="Boolean" usesScalarValueType="YES"/>
+        <relationship name="ownedTrips" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Trip" inverseName="owner" inverseEntity="Trip"/>
+        <relationship name="participatedTrips" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Trip" inverseName="participants" inverseEntity="Trip"/>
+        <relationship name="footsteps" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Footstep" inverseName="author" inverseEntity="Footstep"/>
+    </entity>
+    <entity name="Trip" representedClassName="Trip" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="tripDescription" optional="YES" attributeType="String"/>
+        <attribute name="startDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="endDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isActive" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="owner" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="ownedTrips" inverseEntity="User"/>
+        <relationship name="participants" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="User" inverseName="participatedTrips" inverseEntity="User"/>
+        <relationship name="footsteps" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Footstep" inverseName="trip" inverseEntity="Footstep"/>
+    </entity>
+    <entity name="Footstep" representedClassName="Footstep" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="longitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="author" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="footsteps" inverseEntity="User"/>
+        <relationship name="trip" maxCount="1" deletionRule="Nullify" destinationEntity="Trip" inverseName="footsteps" inverseEntity="Trip"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="footstep" inverseEntity="Photo"/>
+    </entity>
+    <entity name="Photo" representedClassName="Photo" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="filename" attributeType="String"/>
+        <attribute name="localURL" optional="YES" attributeType="String"/>
+        <attribute name="cloudURL" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="footstep" maxCount="1" deletionRule="Nullify" destinationEntity="Footstep" inverseName="photos" inverseEntity="Footstep"/>
+    </entity>
+</model> 
