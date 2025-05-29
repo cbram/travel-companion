@@ -3,18 +3,9 @@ import PhotosUI
 import CoreLocation
 
 struct MemoryCreationView: View {
-    @StateObject private var viewModel: MemoryCreationViewModel
+    @StateObject private var viewModel = MemoryCreationViewModel()
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
-    
-    let trip: Trip
-    let user: User
-    
-    init(trip: Trip, user: User) {
-        self.trip = trip
-        self.user = user
-        self._viewModel = StateObject(wrappedValue: MemoryCreationViewModel(trip: trip, user: user))
-    }
     
     var body: some View {
         NavigationView {
@@ -25,6 +16,11 @@ struct MemoryCreationView: View {
                     
                     // Form Content
                     VStack(spacing: 16) {
+                        // Trip Info (falls vorhanden)
+                        if let trip = viewModel.trip {
+                            tripInfoSection(for: trip)
+                        }
+                        
                         // Titel Input
                         titleSection
                         
@@ -78,6 +74,20 @@ struct MemoryCreationView: View {
             } message: {
                 Text("Erinnerung wurde erfolgreich gespeichert!")
             }
+            .alert("Keine aktive Reise", isPresented: $viewModel.showingNoTripAlert) {
+                Button("Zu den Reisen") {
+                    dismiss()
+                    // Hier könnte man zu TripsListView navigieren
+                }
+                Button("Abbrechen") {
+                    dismiss()
+                }
+            } message: {
+                Text("Bitte wählen Sie zuerst eine aktive Reise aus.")
+            }
+        }
+        .onAppear {
+            viewModel.checkActiveTrip()
         }
     }
     
@@ -98,6 +108,37 @@ struct MemoryCreationView: View {
                 .foregroundColor(.secondary)
         }
         .padding(.top)
+    }
+    
+    private func tripInfoSection(for trip: Trip) -> some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "suitcase.fill")
+                    .foregroundColor(.blue)
+                Text("Für: \(trip.title ?? "Aktuelle Reise")")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Spacer()
+                Text("AKTIV")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(8)
+            }
+            
+            if let description = trip.tripDescription, !description.isEmpty {
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding()
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(12)
     }
     
     private var titleSection: some View {
@@ -250,19 +291,7 @@ struct MemoryCreationView: View {
 
 struct MemoryCreationView_Previews: PreviewProvider {
     static var previews: some View {
-        let context = PersistenceController.preview.container.viewContext
-        let user = User(context: context)
-        user.id = UUID()
-        user.email = "test@example.com"
-        user.displayName = "Test User"
-        
-        let trip = Trip(context: context)
-        trip.id = UUID()
-        trip.title = "Test Trip"
-        trip.startDate = Date()
-        trip.owner = user
-        
-        return MemoryCreationView(trip: trip, user: user)
-            .environment(\.managedObjectContext, context)
+        MemoryCreationView()
+            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 } 

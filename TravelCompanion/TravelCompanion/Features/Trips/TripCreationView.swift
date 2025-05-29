@@ -1,213 +1,198 @@
 import SwiftUI
 
-/// View für die Erstellung neuer Reisen mit schönem Form-Design
+/// View für die Erstellung neuer Reisen
+/// Bietet ein einfaches Formular mit Validation und automatischer Navigation
 struct TripCreationView: View {
-    @StateObject private var viewModel: TripCreationViewModel
+    @StateObject private var viewModel = TripCreationViewModel()
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var focusedField: FocusField?
-    
-    let user: User
-    
-    // MARK: - Initialization
-    init(user: User) {
-        self.user = user
-        self._viewModel = StateObject(wrappedValue: TripCreationViewModel(user: user))
-    }
-    
-    // MARK: - FocusField Enum
-    enum FocusField {
-        case title, description
-    }
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 24) {
-                    headerSection
-                    formSection
-                    saveButtonSection
+            Form {
+                // Titel Section
+                Section("Titel der Reise") {
+                    TextField("z.B. Italien Rundreise", text: $viewModel.title)
+                        .textFieldStyle(.roundedBorder)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+                .headerProminence(.increased)
+                
+                // Beschreibung Section
+                Section("Beschreibung (Optional)") {
+                    TextEditor(text: $viewModel.description)
+                        .frame(minHeight: 100)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                }
+                
+                // Startdatum Section
+                Section("Startdatum") {
+                    DatePicker(
+                        "Wann beginnt Ihre Reise?",
+                        selection: $viewModel.startDate,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.compact)
+                }
+                
+                // Zusätzliche Optionen
+                Section("Optionen") {
+                    Toggle("Sofort als aktive Reise setzen", isOn: $viewModel.setAsActive)
+                        .toggleStyle(SwitchToggleStyle(tint: .blue))
+                }
+                
+                // Vorschau Section
+                if !viewModel.title.isEmpty {
+                    Section("Vorschau") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "suitcase.fill")
+                                    .foregroundColor(.blue)
+                                Text(viewModel.title)
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            
+                            if !viewModel.description.isEmpty {
+                                Text(viewModel.description)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(3)
+                            }
+                            
+                            HStack {
+                                Image(systemName: "calendar")
+                                    .foregroundColor(.secondary)
+                                Text("Start: \(viewModel.startDate, formatter: DateFormatter.mediumDate)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
             }
-            .background(Color(.systemGroupedBackground))
             .navigationTitle("Neue Reise")
             .navigationBarTitleDisplayMode(.large)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Abbrechen") {
                         dismiss()
                     }
+                    .foregroundColor(.red)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Speichern") {
-                        Task {
-                            if await viewModel.createTrip() != nil {
-                                dismiss()
-                            }
+                    Button("Erstellen") {
+                        viewModel.createTrip {
+                            dismiss()
                         }
                     }
-                    .disabled(!viewModel.canSave)
+                    .disabled(!viewModel.isValid)
                     .fontWeight(.semibold)
                 }
             }
-        }
-        .alert("Fehler", isPresented: $viewModel.showingError) {
-            Button("OK") {}
-        } message: {
-            Text(viewModel.errorMessage)
-        }
-    }
-    
-    // MARK: - Header Section
-    private var headerSection: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "suitcase.fill")
-                .font(.system(size: 50))
-                .foregroundColor(.blue)
-            
-            Text("Neue Reise erstellen")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .multilineTextAlignment(.center)
-            
-            Text("Erstelle eine neue Reise und beginne deine Abenteuer zu dokumentieren.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.top, 16)
-    }
-    
-    // MARK: - Form Section
-    private var formSection: some View {
-        VStack(spacing: 20) {
-            // Titel Eingabe
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Titel", systemImage: "textformat")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                TextField("z.B. Italien Rundreise", text: $viewModel.title)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focusedField, equals: .title)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField = .description
-                    }
-                
-                if let validationMessage = viewModel.getTitleValidationMessage() {
-                    Text(validationMessage)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                }
+            .alert("Fehler", isPresented: $viewModel.showError) {
+                Button("OK") { }
+            } message: {
+                Text(viewModel.errorMessage)
             }
-            
-            // Beschreibung Eingabe
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Beschreibung", systemImage: "text.alignleft")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                TextField("Optionale Beschreibung deiner Reise...", text: $viewModel.description, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(3...6)
-                    .focused($focusedField, equals: .description)
-            }
-            
-            // Startdatum Auswahl
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Startdatum", systemImage: "calendar")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                DatePicker(
-                    "Wann beginnt deine Reise?",
-                    selection: $viewModel.startDate,
-                    displayedComponents: .date
-                )
-                .datePickerStyle(.compact)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.systemBackground))
-                        .stroke(Color(.systemGray4), lineWidth: 1)
-                )
-            }
-        }
-        .padding(.horizontal, 4)
-    }
-    
-    // MARK: - Save Button Section
-    private var saveButtonSection: some View {
-        VStack(spacing: 16) {
-            Button(action: {
-                Task {
-                    if await viewModel.createTrip() != nil {
-                        dismiss()
-                    }
-                }
-            }) {
-                HStack(spacing: 12) {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                    } else {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                    }
-                    
-                    Text(viewModel.isLoading ? "Wird erstellt..." : "Reise erstellen")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            viewModel.canSave 
-                            ? Color.blue 
-                            : Color.gray.opacity(0.3)
-                        )
-                )
-                .foregroundColor(.white)
-            }
-            .disabled(!viewModel.canSave)
-            
-            // Hilfetext
-            Text("Die neue Reise wird automatisch als aktive Reise ausgewählt.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            .disabled(viewModel.isCreating)
+            .overlay(
+                // Loading Overlay
+                viewModel.isCreating ? 
+                Color.black.opacity(0.3)
+                    .overlay(
+                        ProgressView("Reise wird erstellt...")
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(10)
+                    )
+                    .ignoresSafeArea()
+                : nil
+            )
         }
     }
 }
 
-// MARK: - Preview
-struct TripCreationView_Previews: PreviewProvider {
-    static func createPreviewUser() -> User {
-        let context = PersistenceController.preview.container.viewContext
-        let user = User(context: context)
-        user.id = UUID()
-        user.email = "test@example.com"
-        user.displayName = "Test User"
-        return user
+/// ViewModel für TripCreationView
+/// Verwaltet Form-State, Validation und Trip-Erstellung
+class TripCreationViewModel: ObservableObject {
+    // MARK: - Published Properties
+    @Published var title = ""
+    @Published var description = ""
+    @Published var startDate = Date()
+    @Published var setAsActive = true
+    @Published var isCreating = false
+    @Published var showError = false
+    @Published var errorMessage = ""
+    
+    // MARK: - Computed Properties
+    var isValid: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    static var previews: some View {
-        let user = createPreviewUser()
-        
-        Group {
-            TripCreationView(user: user)
-                .preferredColorScheme(.light)
-                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-            
-            TripCreationView(user: user)
-                .preferredColorScheme(.dark)
-                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    // MARK: - Trip Creation
+    func createTrip(completion: @escaping () -> Void) {
+        guard isValid else {
+            showError(message: "Bitte geben Sie einen Titel für die Reise ein.")
+            return
         }
+        
+        isCreating = true
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            
+            let trimmedDescription = self.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            let finalDescription = trimmedDescription.isEmpty ? nil : trimmedDescription
+            
+            guard let newTrip = TripManager.shared.createTrip(
+                title: self.title,
+                description: finalDescription,
+                startDate: self.startDate
+            ) else {
+                self.showError(message: "Die Reise konnte nicht erstellt werden. Bitte versuchen Sie es erneut.")
+                self.isCreating = false
+                return
+            }
+            
+            // Als aktive Reise setzen wenn gewünscht
+            if self.setAsActive {
+                TripManager.shared.setActiveTrip(newTrip)
+            }
+            
+            self.isCreating = false
+            completion()
+            
+            print("✅ TripCreationView: Reise erfolgreich erstellt: \(self.title)")
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func showError(message: String) {
+        errorMessage = message
+        showError = true
+    }
+}
+
+// MARK: - Date Formatter Extension
+extension DateFormatter {
+    static let mediumDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "de_DE")
+        return formatter
+    }()
+}
+
+// MARK: - Preview
+struct TripCreationView_Previews: PreviewProvider {
+    static var previews: some View {
+        TripCreationView()
     }
 } 

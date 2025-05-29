@@ -12,12 +12,15 @@ class MemoryCreationViewModel: ObservableObject {
     @Published var content: String = ""
     @Published var selectedImage: UIImage?
     @Published var currentLocation: CLLocation?
+    @Published var trip: Trip?
+    @Published var user: User?
     
     // UI State
     @Published var showingImagePicker = false
     @Published var showingPhotoPicker = false
     @Published var showingError = false
     @Published var showingSuccess = false
+    @Published var showingNoTripAlert = false
     @Published var isSaving = false
     
     // Error Handling
@@ -30,15 +33,16 @@ class MemoryCreationViewModel: ObservableObject {
     var imageSourceType: UIImagePickerController.SourceType = .camera
     
     // MARK: - Dependencies
-    private let trip: Trip
-    private let user: User
     private let coreDataManager = CoreDataManager.shared
     private let locationManager = LocationManager.shared
+    private let tripManager = TripManager.shared
     
     // MARK: - Computed Properties
     var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
-        currentLocation != nil
+        currentLocation != nil &&
+        trip != nil &&
+        user != nil
     }
     
     var isCameraAvailable: Bool {
@@ -46,12 +50,35 @@ class MemoryCreationViewModel: ObservableObject {
     }
     
     // MARK: - Initialization
-    init(trip: Trip, user: User) {
-        self.trip = trip
-        self.user = user
-        
-        // Initial location setup
+    init() {
+        setupInitialData()
         setupLocation()
+    }
+    
+    // MARK: - Setup Methods
+    private func setupInitialData() {
+        // Aktive Reise und User aus TripManager holen
+        self.trip = tripManager.currentTrip
+        self.user = getCurrentUser()
+    }
+    
+    func checkActiveTrip() {
+        if trip == nil || user == nil {
+            showingNoTripAlert = true
+        }
+    }
+    
+    private func getCurrentUser() -> User? {
+        let request: NSFetchRequest<User> = User.fetchRequest()
+        request.fetchLimit = 1
+        
+        do {
+            let users = try coreDataManager.viewContext.fetch(request)
+            return users.first
+        } catch {
+            print("❌ MemoryCreationViewModel: Fehler beim Laden des Users: \(error)")
+            return nil
+        }
     }
     
     // MARK: - Location Management
@@ -136,6 +163,11 @@ class MemoryCreationViewModel: ObservableObject {
     
     // MARK: - Memory Saving
     func saveMemory() async {
+        guard let trip = trip, let user = user else {
+            showError("Keine aktive Reise oder User vorhanden")
+            return
+        }
+        
         guard canSave else {
             showError("Bitte fülle alle erforderlichen Felder aus")
             return
@@ -144,16 +176,34 @@ class MemoryCreationViewModel: ObservableObject {
         isSaving = true
         
         do {
-            // Create Memory in Core Data
-            let memory = try await createMemory()
+            // Create Memory using CoreDataManager
+            let memory = coreDataManager.createMemory(
+                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                content: content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content.trimmingCharacters(in: .whitespacesAndNewlines),
+                latitude: currentLocation?.coordinate.latitude ?? 0.0,
+                longitude: currentLocation?.coordinate.longitude ?? 0.0,
+                author: user,
+                trip: trip
+            )
             
             // Save photo if available
             if let image = selectedImage {
-                try await savePhoto(for: memory, image: image)
+                let photo = coreDataManager.createPhoto(
+                    filename: "memory_\(UUID().uuidString).jpg",
+                    localURL: nil, // In Production hier lokale Speicherung
+                    memory: memory
+                )
+                
+                // TODO: In Production hier Foto speichern
+                print("📷 MemoryCreationViewModel: Foto würde gespeichert für \(photo.filename ?? "unknown")")
             }
             
             // Save Core Data context
-            coreDataManager.save()
+            guard coreDataManager.save() else {
+                throw NSError(domain: "MemoryCreation", code: 1, userInfo: [NSLocalizedDescriptionKey: "Fehler beim Speichern in Core Data"])
+            }
+            
+            print("✅ MemoryCreationViewModel: Memory erfolgreich erstellt: \(title)")
             
             // Show success
             showingSuccess = true
@@ -168,92 +218,20 @@ class MemoryCreationViewModel: ObservableObject {
         isSaving = false
     }
     
-    private func createMemory() async throws -> Memory {
-        return try await withCheckedThrowingContinuation { continuation in
-            coreDataManager.backgroundContext.perform {
-                do {
-                    // Get objects in background context
-                    let backgroundTrip = self.coreDataManager.backgroundContext.object(with: self.trip.objectID) as! Trip
-                    let backgroundUser = self.coreDataManager.backgroundContext.object(with: self.user.objectID) as! User
-                    
-                    // Create memory
-                    let memory = Memory(context: self.coreDataManager.backgroundContext)
-                    memory.id = UUID()
-                    memory.title = self.title.trimmingCharacters(in: .whitespacesAndNewlines)
-                    memory.content = self.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : self.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                    memory.timestamp = Date()
-                    memory.createdAt = Date()
-                    memory.author = backgroundUser
-                    memory.trip = backgroundTrip
-                    
-                    // Set location
-                    if let location = self.currentLocation {
-                        memory.latitude = location.coordinate.latitude
-                        memory.longitude = location.coordinate.longitude
-                    }
-                    
-                    try self.coreDataManager.backgroundContext.save()
-                    
-                    // Get memory in main context
-                    DispatchQueue.main.async {
-                        let mainMemory = self.coreDataManager.viewContext.object(with: memory.objectID) as! Memory
-                        continuation.resume(returning: mainMemory)
-                    }
-                    
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+    // MARK: - Helper Methods
+    private func resetForm() {
+        title = ""
+        content = ""
+        selectedImage = nil
+        photoPickerItem = nil
+        // Location bleibt für nächstes Memory
     }
     
-    private func savePhoto(for memory: Memory, image: UIImage) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            coreDataManager.backgroundContext.perform {
-                do {
-                    // Get memory in background context
-                    let backgroundMemory = self.coreDataManager.backgroundContext.object(with: memory.objectID) as! Memory
-                    
-                    // Generate unique filename
-                    let filename = "\(UUID().uuidString).jpg"
-                    
-                    // Save image to local storage
-                    let localURL = try self.saveImageToDocuments(image: image, filename: filename)
-                    
-                    // Create Photo entity
-                    let photo = Photo(context: self.coreDataManager.backgroundContext)
-                    photo.id = UUID()
-                    photo.filename = filename
-                    photo.localURL = localURL
-                    photo.createdAt = Date()
-                    photo.memory = backgroundMemory
-                    
-                    try self.coreDataManager.backgroundContext.save()
-                    
-                    continuation.resume()
-                    
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+    private func showError(_ message: String) {
+        errorMessage = message
+        showingError = true
     }
     
-    // MARK: - File Management
-    private func saveImageToDocuments(image: UIImage, filename: String) throws -> String {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            throw MemoryCreationError.imageCompressionFailed
-        }
-        
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let imageURL = documentsPath.appendingPathComponent(filename)
-        
-        try imageData.write(to: imageURL)
-        
-        return imageURL.path
-    }
-    
-    // MARK: - Permission Checking
     private func checkCameraPermission(completion: @escaping (Bool) -> Void) {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
@@ -267,19 +245,6 @@ class MemoryCreationViewModel: ObservableObject {
         @unknown default:
             completion(false)
         }
-    }
-    
-    // MARK: - Helper Methods
-    private func showError(_ message: String) {
-        errorMessage = message
-        showingError = true
-    }
-    
-    private func resetForm() {
-        title = ""
-        content = ""
-        selectedImage = nil
-        photoPickerItem = nil
     }
 }
 

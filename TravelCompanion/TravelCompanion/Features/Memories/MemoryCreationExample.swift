@@ -93,9 +93,7 @@ struct MemoryCreationExample: View {
             .navigationTitle("TravelCompanion")
         }
         .sheet(isPresented: $showingMemoryCreation) {
-            if let trip = selectedTrip, let user = currentUser {
-                MemoryCreationView(trip: trip, user: user)
-            }
+            MemoryCreationView()
         }
         .onAppear {
             setupDemoData()
@@ -221,7 +219,7 @@ struct TripDetailView: View {
             }
         }
         .sheet(isPresented: $showingMemoryCreation) {
-            MemoryCreationView(trip: trip, user: user)
+            MemoryCreationView()
         }
     }
 }

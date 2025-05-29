@@ -45,17 +45,21 @@ class CoreDataManager {
     
     // MARK: - Core Data Saving Support
     
-    func save() {
+    @discardableResult
+    func save() -> Bool {
         let context = persistentContainer.viewContext
         
         if context.hasChanges {
             do {
                 try context.save()
                 print("✅ CoreDataManager: Context saved successfully")
+                return true
             } catch {
                 print("❌ CoreDataManager: Failed to save context: \(error)")
+                return false
             }
         }
+        return true
     }
     
     func saveContext(context: NSManagedObjectContext) {
@@ -80,6 +84,7 @@ class CoreDataManager {
     @discardableResult
     func createUser(email: String, displayName: String) -> User {
         let user = User(context: viewContext)
+        user.id = UUID()
         user.email = email
         user.displayName = displayName
         user.createdAt = Date()
@@ -104,6 +109,7 @@ class CoreDataManager {
     @discardableResult
     func createTrip(title: String, description: String?, startDate: Date, owner: User) -> Trip {
         let trip = Trip(context: viewContext)
+        trip.id = UUID()
         trip.title = title
         trip.tripDescription = description
         trip.startDate = startDate
@@ -115,7 +121,7 @@ class CoreDataManager {
     
     func fetchTrips(for user: User) -> [Trip] {
         let request: NSFetchRequest<Trip> = Trip.fetchRequest()
-        request.predicate = NSPredicate(format: "owner == %@ OR participants == %@", user, user)
+        request.predicate = NSPredicate(format: "owner == %@ OR ANY participants == %@", user, user)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Trip.startDate, ascending: false)]
         
         do {
@@ -130,11 +136,12 @@ class CoreDataManager {
         trip.isActive = isActive
     }
     
-    // MARK: - Memory Management
+    // MARK: - Memory Management (Footsteps)
     
     @discardableResult
     func createMemory(title: String, content: String?, latitude: Double, longitude: Double, author: User, trip: Trip) -> Memory {
         let memory = Memory(context: viewContext)
+        memory.id = UUID()
         memory.title = title
         memory.content = content
         memory.latitude = latitude
@@ -146,16 +153,71 @@ class CoreDataManager {
         return memory
     }
     
+    // Alias methods for consistency with Footstep naming
+    @discardableResult
+    func createFootstep(title: String, content: String?, latitude: Double, longitude: Double, author: User, trip: Trip) -> Memory {
+        return createMemory(title: title, content: content, latitude: latitude, longitude: longitude, author: author, trip: trip)
+    }
+    
+    func fetchFootsteps(for trip: Trip) -> [Memory] {
+        return fetchMemories(for: trip)
+    }
+    
+    func fetchFootsteps(for user: User) -> [Memory] {
+        return fetchMemories(for: user)
+    }
+    
+    func fetchFootsteps(for user: User, from startDate: Date, to endDate: Date) -> [Memory] {
+        let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+        request.predicate = NSPredicate(format: "author == %@ AND timestamp >= %@ AND timestamp <= %@", user, startDate as NSDate, endDate as NSDate)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
+        
+        do {
+            return try viewContext.fetch(request)
+        } catch {
+            print("❌ CoreDataManager: Error fetching footsteps for date range: \(error)")
+            return []
+        }
+    }
+    
+    func fetchFootsteps(near latitude: Double, longitude: Double, radius: Double) -> [Memory] {
+        // Vereinfachte Implementierung ohne Core Location Framework
+        // In Production würde hier eine geografische Suche implementiert
+        let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
+        
+        do {
+            let allMemories = try viewContext.fetch(request)
+            return allMemories.filter { memory in
+                let distance = distanceBetween(
+                    lat1: latitude, lon1: longitude,
+                    lat2: memory.latitude, lon2: memory.longitude
+                )
+                return distance <= radius
+            }
+        } catch {
+            print("❌ CoreDataManager: Error fetching nearby footsteps: \(error)")
+            return []
+        }
+    }
+    
     // MARK: - Photo Management
     
     @discardableResult
     func createPhoto(filename: String, localURL: String?, memory: Memory) -> Photo {
         let photo = Photo(context: viewContext)
+        photo.id = UUID()
         photo.filename = filename
         photo.localURL = localURL
         photo.createdAt = Date()
         photo.memory = memory
         return photo
+    }
+    
+    // Overloaded method for Footstep compatibility
+    @discardableResult
+    func createPhoto(filename: String, localURL: String?, footstep: Memory) -> Photo {
+        return createPhoto(filename: filename, localURL: localURL, memory: footstep)
     }
     
     // MARK: - Fetch Helpers
@@ -233,5 +295,19 @@ class CoreDataManager {
         }
         
         save()
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func distanceBetween(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
+        // Haversine formula for distance calculation
+        let earthRadius: Double = 6371000 // meters
+        let dLat = (lat2 - lat1) * .pi / 180
+        let dLon = (lon2 - lon1) * .pi / 180
+        
+        let a = sin(dLat/2) * sin(dLat/2) + cos(lat1 * .pi / 180) * cos(lat2 * .pi / 180) * sin(dLon/2) * sin(dLon/2)
+        let c = 2 * atan2(sqrt(a), sqrt(1-a))
+        
+        return earthRadius * c
     }
 } 
