@@ -176,26 +176,84 @@ SampleDataCreator.printDataSummary(using: CoreDataManager.shared)
 ## 📁 Dateistruktur
 
 ```
-TravelCompanion/
-├── TravelCompanion.xcdatamodeld/          # Core Data Model
-├── CoreData/
-│   ├── CoreDataManager.swift             # Stack Management
-│   ├── PersistenceController.swift       # SwiftUI Support
-│   ├── SampleDataCreator.swift           # Test Data
-│   ├── LocationManager.swift             # ✅ GPS-Tracking Service
-│   └── Models/
-│       ├── User+CoreDataClass.swift      # User Erweiterungen
-│       ├── User+CoreDataProperties.swift # User Properties
-│       ├── Trip+CoreDataClass.swift      # Trip Erweiterungen
-│       ├── Trip+CoreDataProperties.swift # Trip Properties
-│       ├── Footstep+CoreDataClass.swift  # Footstep Erweiterungen
-│       ├── Footstep+CoreDataProperties.swift # Footstep Properties
-│       ├── Photo+CoreDataClass.swift     # Photo Erweiterungen
-│       └── Photo+CoreDataProperties.swift # Photo Properties
-├── LocationManagerExample.swift          # Beispiel-Implementation
-├── GPSTestScript.swift                   # ✅ NEU: Test-Framework
-├── Info.plist.template                   # ✅ NEU: Konfigurations-Template
-└── README.md                             # Diese Dokumentation
+TravelCompanion/                              # Xcode Workspace Root
+├── TravelCompanion/                          # Haupt-Xcode-Project-Verzeichnis  
+│   ├── TravelCompanion.xcodeproj/           # Xcode Project
+│   ├── TravelCompanionTests/                # Unit Tests  
+│   ├── TravelCompanionUITests/              # UI Tests
+│   └── TravelCompanion/                     # ✅ App Source Code (Alles im App-Target)
+│       ├── TravelCompanionApp.swift         # App Entry Point
+│       ├── ContentView.swift               # Haupt-View
+│       ├── Persistence.swift               # Legacy Core Data Support
+│       ├── Info.plist                      # App Konfiguration
+│       ├── Assets.xcassets/               # App Assets (Bilder, Icons)
+│       │
+│       ├── Core/                          # 🏗️ Core Services & Foundation
+│       │   ├── CoreData/                  # Core Data Stack
+│       │   │   ├── CoreDataManager.swift          # Stack Management
+│       │   │   ├── PersistenceController.swift    # SwiftUI Support
+│       │   │   ├── SampleDataCreator.swift        # Test Data
+│       │   │   ├── TravelCompanion.xcdatamodeld/  # Core Data Model
+│       │   │   └── Models/                        # Generated Models
+│       │   │       ├── User+CoreDataClass.swift      
+│       │   │       ├── User+CoreDataProperties.swift  
+│       │   │       ├── Trip+CoreDataClass.swift      
+│       │   │       ├── Trip+CoreDataProperties.swift 
+│       │   │       ├── Footstep+CoreDataClass.swift  
+│       │   │       ├── Footstep+CoreDataProperties.swift
+│       │   │       ├── Photo+CoreDataClass.swift     
+│       │   │       └── Photo+CoreDataProperties.swift
+│       │   │
+│       │   ├── Location/                  # 📍 GPS & Location Services
+│       │   │   ├── LocationManager.swift          # Intelligentes GPS-Tracking
+│       │   │   ├── LocationManagerExample.swift   # Usage Examples
+│       │   │   └── GPSTestScript.swift           # Test Framework
+│       │   │
+│       │   └── Networking/               # 🌐 API & Sync Services
+│       │       └── (Future: API Manager, CloudKit Sync)
+│       │
+│       ├── Features/                     # 📱 App Features (Feature-Based Architecture)
+│       │   ├── Memories/                # 📸 Memory Creation & Management  
+│       │   │   ├── MemoryCreationView.swift
+│       │   │   ├── MemoryCreationViewModel.swift
+│       │   │   ├── EnhancedMemoryCreationView.swift
+│       │   │   ├── EnhancedMemoryCreationViewModel.swift
+│       │   │   ├── MemoryCardView.swift
+│       │   │   ├── PhotoPicker.swift
+│       │   │   └── MemoryCreationExample.swift
+│       │   │
+│       │   ├── Timeline/                # 📅 Timeline & Trip History
+│       │   │   ├── TimelineView.swift          
+│       │   │   ├── TimelineViewModel.swift     
+│       │   │   └── EmptyStateView.swift        
+│       │   │
+│       │   ├── Trips/                   # 🗺️ Trip Management
+│       │   │   ├── TripCreationView.swift      
+│       │   │   ├── TripsListView.swift          
+│       │   │   └── (Future: TripDetailView.swift, TripViewModel.swift)
+│       │   │
+│       │   └── Profile/                 # 👤 User Profile & Settings
+│       │       └── (Future: ProfileView.swift, SettingsView.swift)
+│       │
+│       ├── Utils/                       # 🛠️ Utilities & Helpers
+│       │   ├── Extensions/              # Swift Extensions
+│       │   └── Helpers/                 # Helper Classes & Functions
+│       │
+│       ├── Resources/                   # 📋 App Resources
+│       │   └── Info.plist.template      # Template für Permissions Setup
+│       │
+│       └── Tests/                       # 🧪 Test Infrastructure  
+│           ├── Unit/                    # Unit Tests
+│           └── Integration/             # Integration Tests
+│
+├── Documentation/                        # 📚 Project Documentation
+│   ├── TRIP_MANAGEMENT_DOCUMENTATION.md
+│   ├── TIMELINE_IMPLEMENTATION_DOCUMENTATION.md
+│   ├── MEMORY_CREATION_DOCUMENTATION.md
+│   └── GPS_IMPLEMENTATION_SUMMARY.md
+│
+├── README.md                            # Diese Dokumentation
+└── .gitignore                          # Git Ignore Rules
 ```
 
 ## ✨ Features
