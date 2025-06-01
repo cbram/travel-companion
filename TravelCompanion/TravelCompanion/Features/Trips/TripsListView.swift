@@ -4,8 +4,11 @@ import SwiftUI
 /// Zeigt Liste mit aktiver Reise, ermöglicht Wechsel und Löschen
 struct TripsListView: View {
     @StateObject private var viewModel = TripsListViewModel()
-    @StateObject private var tripManager = TripManager.shared
+    @EnvironmentObject private var tripManager: TripManager
+    @EnvironmentObject private var userManager: UserManager
     @State private var showingTripCreation = false
+    @State private var showingQuickActions = false
+    @State private var selectedTrip: Trip?
     
     var body: some View {
         NavigationView {
@@ -41,7 +44,8 @@ struct TripsListView: View {
             .navigationTitle("Meine Reisen")
             .navigationBarTitleDisplayMode(.large)
             .refreshable {
-                await viewModel.refreshTrips()
+                // Refresh über TripManager
+                tripManager.refreshTrips()
             }
             .sheet(isPresented: $showingTripCreation) {
                 TripCreationView()
@@ -52,8 +56,28 @@ struct TripsListView: View {
                 }
                 Button("Abbrechen", role: .cancel) { }
             } message: {
-                Text("Möchten Sie diese Reise wirklich löschen? Alle Footsteps und Fotos gehen verloren.")
+                Text("Möchten Sie diese Reise wirklich löschen? Alle Memories und Fotos gehen verloren.")
             }
+            .confirmationDialog("Reise verwalten", isPresented: $showingQuickActions, presenting: selectedTrip) { trip in
+                Button("Reise beenden") {
+                    tripManager.endCurrentTrip()
+                }
+                
+                Button("Bearbeiten") {
+                    // Navigation zur TripDetailView wird automatisch gehandhabt
+                }
+                
+                Button("Löschen", role: .destructive) {
+                    tripManager.deleteTrip(trip)
+                }
+                
+                Button("Abbrechen", role: .cancel) { }
+            } message: { trip in
+                Text("Aktionen für \(trip.formattedTitle)")
+            }
+        }
+        .onAppear {
+            viewModel.setTripManager(tripManager)
         }
     }
     
@@ -97,19 +121,44 @@ struct TripsListView: View {
     private var tripsListView: some View {
         List {
             ForEach(tripManager.allTrips, id: \.objectID) { trip in
-                TripRowView(
-                    trip: trip,
-                    isActive: trip == tripManager.currentTrip,
-                    onTap: {
-                        viewModel.selectTrip(trip)
-                    }
-                )
+                NavigationLink(
+                    destination: TripManagementView(trip: trip)
+                        .environmentObject(tripManager)
+                        .environmentObject(userManager)
+                ) {
+                    TripRowView(
+                        trip: trip,
+                        isActive: trip == tripManager.currentTrip,
+                        onTap: {
+                            // Navigation wird automatisch durch NavigationLink gehandhabt
+                        },
+                        onLongPress: {
+                            // Quick Actions für aktive Reise
+                            if trip == tripManager.currentTrip {
+                                showQuickActions(for: trip)
+                            }
+                        }
+                    )
+                }
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .onDelete(perform: viewModel.deleteTrips)
+            .onDelete(perform: deleteTrips)
         }
         .listStyle(.plain)
+    }
+    
+    // MARK: - Helper Methods
+    private func deleteTrips(offsets: IndexSet) {
+        for index in offsets {
+            let trip = tripManager.allTrips[index]
+            tripManager.deleteTrip(trip)
+        }
+    }
+    
+    private func showQuickActions(for trip: Trip) {
+        selectedTrip = trip
+        showingQuickActions = true
     }
 }
 
@@ -118,97 +167,100 @@ struct TripRowView: View {
     let trip: Trip
     let isActive: Bool
     let onTap: () -> Void
-    
-    @StateObject private var tripManager = TripManager.shared
+    let onLongPress: () -> Void
     
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 16) {
-                // Icon und Active Indicator
-                ZStack {
-                    Circle()
-                        .fill(isActive ? Color.green : Color.blue.opacity(0.1))
-                        .frame(width: 50, height: 50)
+        HStack(spacing: 16) {
+            // Icon und Active Indicator
+            ZStack {
+                Circle()
+                    .fill(isActive ? Color.green : Color.blue.opacity(0.1))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: isActive ? "checkmark.circle.fill" : "suitcase.fill")
+                    .font(.title2)
+                    .foregroundColor(isActive ? .white : .blue)
+            }
+            
+            // Trip Info
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(trip.title ?? "Unbekannte Reise")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
                     
-                    Image(systemName: isActive ? "checkmark.circle.fill" : "suitcase.fill")
-                        .font(.title2)
-                        .foregroundColor(isActive ? .white : .blue)
+                    Spacer()
+                    
+                    if isActive {
+                        Text("AKTIV")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.green)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.green.opacity(0.1))
+                            .cornerRadius(8)
+                    }
                 }
                 
-                // Trip Info
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text(trip.title ?? "Unbekannte Reise")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                        
-                        Spacer()
-                        
-                        if isActive {
-                            Text("AKTIV")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.green)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color.green.opacity(0.1))
-                                .cornerRadius(8)
-                        }
-                    }
-                    
-                    if let description = trip.tripDescription, !description.isEmpty {
-                        Text(description)
-                            .font(.subheadline)
+                if let description = trip.tripDescription, !description.isEmpty {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+                
+                // Statistiken
+                HStack(spacing: 16) {
+                    // Datum
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.caption)
                             .foregroundColor(.secondary)
-                            .lineLimit(2)
-                    }
-                    
-                    // Statistiken
-                    HStack(spacing: 16) {
-                        // Datum
-                        HStack(spacing: 4) {
-                            Image(systemName: "calendar")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedDateRange)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        // Footsteps Count
-                        HStack(spacing: 4) {
-                            Image(systemName: "location.fill")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("\(footstepsCount) Orte")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        // Dauer
-                        Text(formattedDuration)
+                        Text(formattedDateRange)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    
+                    // Memories Count
+                    HStack(spacing: 4) {
+                        Image(systemName: "location.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("\(trip.memoriesCount) Memories")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Dauer
+                    Text(trip.formattedDuration)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                
-                // Chevron
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
-            )
+            
+            // Chevron
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(isActive ? Color.green.opacity(0.05) : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(isActive ? Color.green.opacity(0.3) : Color.clear, lineWidth: 1)
+                )
+        )
+        .onLongPressGesture {
+            if isActive {
+                onLongPress()
+            }
+        }
     }
     
     // MARK: - Computed Properties
@@ -217,64 +269,41 @@ struct TripRowView: View {
         formatter.dateStyle = .short
         formatter.locale = Locale(identifier: "de_DE")
         
-        let startDate = trip.startDate ?? Date()
+        guard let startDate = trip.startDate else { return "Unbekannt" }
+        
         if let endDate = trip.endDate {
             return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
         } else {
-            return "seit \(formatter.string(from: startDate))"
+            return "Seit \(formatter.string(from: startDate))"
         }
-    }
-    
-    private var formattedDuration: String {
-        let stats = tripManager.getStatistics(for: trip)
-        return stats.formattedDuration
-    }
-    
-    private var footstepsCount: Int {
-        let footsteps = CoreDataManager.shared.fetchFootsteps(for: trip)
-        return footsteps.count
     }
 }
 
 /// ViewModel für TripsListView
+@MainActor
 class TripsListViewModel: ObservableObject {
     @Published var showDeleteConfirmation = false
-    private var tripToDelete: Trip?
+    @Published var tripToDelete: Trip?
     
-    // MARK: - Trip Selection
-    func selectTrip(_ trip: Trip) {
-        TripManager.shared.setActiveTrip(trip)
-        print("✅ TripsListView: Reise als aktiv gesetzt: \(trip.title ?? "Unbekannt")")
+    private var tripManager: TripManager?
+    
+    func setTripManager(_ manager: TripManager) {
+        tripManager = manager
     }
     
-    // MARK: - Trip Deletion
-    func deleteTrips(at offsets: IndexSet) {
-        for index in offsets {
-            let trip = TripManager.shared.allTrips[index]
-            tripToDelete = trip
-            showDeleteConfirmation = true
-            break // Nur eine Reise zur Zeit löschen
-        }
+    func selectTrip(_ trip: Trip) {
+        tripManager?.setActiveTrip(trip)
+    }
+    
+    func deleteTrip(_ trip: Trip) {
+        tripToDelete = trip
+        showDeleteConfirmation = true
     }
     
     func confirmDelete() {
         guard let trip = tripToDelete else { return }
-        
-        TripManager.shared.deleteTrip(trip)
+        tripManager?.deleteTrip(trip)
         tripToDelete = nil
-        
-        print("✅ TripsListView: Reise gelöscht: \(trip.title ?? "Unbekannt")")
-    }
-    
-    // MARK: - Refresh
-    func refreshTrips() async {
-        // Kurze Verzögerung für Pull-to-Refresh Animation
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        
-        DispatchQueue.main.async {
-            // TripManager lädt automatisch bei Core Data Änderungen
-            print("🔄 TripsListView: Reisen aktualisiert")
-        }
     }
 }
 
@@ -283,5 +312,7 @@ struct TripsListView_Previews: PreviewProvider {
     static var previews: some View {
         TripsListView()
             .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+            .environmentObject(TripManager.shared)
+            .environmentObject(UserManager.shared)
     }
 } 

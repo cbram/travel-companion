@@ -35,7 +35,6 @@ class MemoryCreationViewModel: ObservableObject {
     // MARK: - Dependencies
     private let coreDataManager = CoreDataManager.shared
     private let locationManager = LocationManager.shared
-    private let tripManager = TripManager.shared
     
     // MARK: - Computed Properties
     var canSave: Bool {
@@ -57,9 +56,67 @@ class MemoryCreationViewModel: ObservableObject {
     
     // MARK: - Setup Methods
     private func setupInitialData() {
-        // Aktive Reise und User aus TripManager holen
-        self.trip = tripManager.currentTrip
-        self.user = getCurrentUser()
+        // Hole aktive Reise und User direkt aus der Core Data mit korrektem Context Management
+        
+        // Lade ersten verfügbaren User im View Context
+        let users = coreDataManager.fetchAllUsers()
+        if users.isEmpty {
+            // Erstelle Sample Data falls leer
+            print("📝 MemoryCreationViewModel: Keine User gefunden, erstelle Sample Data")
+            SampleDataCreator.createSampleData(in: coreDataManager.viewContext)
+            
+            // Speichere sofort nach Sample Data Erstellung
+            do {
+                try coreDataManager.viewContext.save()
+                print("✅ MemoryCreationViewModel: Sample Data gespeichert")
+            } catch {
+                print("❌ MemoryCreationViewModel: Sample Data Speicherfehler: \(error)")
+            }
+            
+            let newUsers = coreDataManager.fetchAllUsers()
+            self.user = newUsers.first
+        } else {
+            self.user = users.first
+        }
+        
+        // Lade aktive Reise für User - wichtig: User muss aus viewContext kommen
+        if let currentUser = user {
+            self.trip = coreDataManager.fetchActiveTrip(for: currentUser)
+            
+            // Falls keine aktive Reise, nimm die erste verfügbare oder erstelle eine
+            if trip == nil {
+                let allTrips = coreDataManager.fetchTrips(for: currentUser)
+                if let firstTrip = allTrips.first {
+                    // Setze erste Reise als aktiv
+                    coreDataManager.setTripActive(firstTrip, isActive: true)
+                    do {
+                        try coreDataManager.viewContext.save()
+                        self.trip = firstTrip
+                        print("✅ MemoryCreationViewModel: Erste Reise als aktiv gesetzt: \(firstTrip.title ?? "Unbekannt")")
+                    } catch {
+                        print("❌ MemoryCreationViewModel: Fehler beim Speichern der aktiven Reise: \(error)")
+                    }
+                } else {
+                    // Erstelle neue Standard-Reise direkt im viewContext
+                    let newTrip = coreDataManager.createTrip(
+                        title: "Meine erste Reise",
+                        description: "Willkommen bei TravelCompanion!",
+                        startDate: Date(),
+                        owner: currentUser
+                    )
+                    coreDataManager.setTripActive(newTrip, isActive: true)
+                    do {
+                        try coreDataManager.viewContext.save()
+                        self.trip = newTrip
+                        print("✅ MemoryCreationViewModel: Neue Standard-Reise erstellt")
+                    } catch {
+                        print("❌ MemoryCreationViewModel: Fehler beim Speichern der neuen Reise: \(error)")
+                    }
+                }
+            }
+        }
+        
+        print("✅ MemoryCreationViewModel: Setup abgeschlossen - User: \(user?.displayName ?? "nil"), Trip: \(trip?.title ?? "nil")")
     }
     
     func checkActiveTrip() {
@@ -68,43 +125,73 @@ class MemoryCreationViewModel: ObservableObject {
         }
     }
     
-    private func getCurrentUser() -> User? {
-        let request: NSFetchRequest<User> = User.fetchRequest()
-        request.fetchLimit = 1
-        
-        do {
-            let users = try coreDataManager.viewContext.fetch(request)
-            return users.first
-        } catch {
-            print("❌ MemoryCreationViewModel: Fehler beim Laden des Users: \(error)")
-            return nil
-        }
-    }
-    
     // MARK: - Location Management
     private func setupLocation() {
         // Get current location from LocationManager
         if let location = locationManager.currentLocation {
             self.currentLocation = location
+            print("✅ MemoryCreationViewModel: Location bereits verfügbar: \(location.formattedCoordinates)")
         } else {
             // Request location update
             updateLocation()
         }
     }
     
+    @Published var isUpdatingLocation = false
+    private var locationUpdateTask: Task<Void, Never>?
+    
     func updateLocation() {
-        // Get fresh location from LocationManager
-        if let location = locationManager.currentLocation {
-            self.currentLocation = location
-        } else {
-            // If no location available, request permission and wait
-            locationManager.requestPermission()
+        // Verhindere mehrfache gleichzeitige Location-Updates
+        guard !isUpdatingLocation else {
+            print("⏸️ MemoryCreationViewModel: Location-Update bereits aktiv, überspringe")
+            return
+        }
+        
+        // Verwende bereits verfügbare Location falls kürzlich aktualisiert
+        if let currentLocation = locationManager.currentLocation {
+            let timeSinceLastUpdate = Date().timeIntervalSince(currentLocation.timestamp)
+            if timeSinceLastUpdate < 30.0 { // 30 Sekunden Cooldown
+                self.currentLocation = currentLocation
+                print("✅ MemoryCreationViewModel: Verwende gecachte Location (vor \(Int(timeSinceLastUpdate))s): \(currentLocation.formattedCoordinates)")
+                return
+            }
+        }
+        
+        // Cancel existing task
+        locationUpdateTask?.cancel()
+        
+        isUpdatingLocation = true
+        print("📍 MemoryCreationViewModel: Starte Location-Update...")
+        
+        locationUpdateTask = Task {
+            // Single location request mit Timeout
+            locationManager.requestCurrentLocation()
             
-            // Use a simple polling approach for demo
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                if let location = self.locationManager.currentLocation {
-                    self.currentLocation = location
+            // Warten auf Update mit Timeout
+            for attempt in 1...3 {
+                if Task.isCancelled { return }
+                
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 Sekunden
+                
+                if let location = locationManager.currentLocation {
+                    await MainActor.run {
+                        self.currentLocation = location
+                        self.isUpdatingLocation = false
+                        print("✅ MemoryCreationViewModel: GPS-Location erhalten: \(location.formattedCoordinates)")
+                    }
+                    return
                 }
+                
+                print("📍 MemoryCreationViewModel: GPS-Versuch \(attempt)/3...")
+            }
+            
+            // Fallback nach Timeout
+            await MainActor.run {
+                if self.currentLocation == nil {
+                    self.currentLocation = CLLocation(latitude: 48.1351, longitude: 11.5820)
+                    print("📍 MemoryCreationViewModel: Verwende München als Fallback-Location")
+                }
+                self.isUpdatingLocation = false
             }
         }
     }
@@ -163,70 +250,157 @@ class MemoryCreationViewModel: ObservableObject {
     
     // MARK: - Memory Saving
     func saveMemory() async {
+        print("🔄 MemoryCreationViewModel: Speicher-Prozess gestartet")
+        
         guard let trip = trip, let user = user else {
-            showError("Keine aktive Reise oder User vorhanden")
+            print("❌ MemoryCreationViewModel: Trip oder User fehlt - Trip: \(trip?.title ?? "nil"), User: \(user?.displayName ?? "nil")")
+            showError("Keine aktive Reise oder User vorhanden. Bitte überprüfen Sie Ihre Daten.")
             return
         }
         
         guard canSave else {
+            print("❌ MemoryCreationViewModel: canSave ist false")
+            print("   - Titel: '\(title)'")
+            print("   - Location: \(currentLocation != nil ? "✅" : "❌")")
+            print("   - Trip: \(trip.title ?? "nil")")
+            print("   - User: \(user.displayName ?? "nil")")
             showError("Bitte fülle alle erforderlichen Felder aus")
+            return
+        }
+        
+        // Validiere Koordinaten bevor Speicherung
+        let lat = currentLocation?.coordinate.latitude ?? 0.0
+        let lon = currentLocation?.coordinate.longitude ?? 0.0
+        
+        guard LocationValidator.isValidCoordinate(latitude: lat, longitude: lon) else {
+            print("❌ MemoryCreationViewModel: Ungültige Koordinaten - Lat: \(lat), Lon: \(lon)")
+            showError("Ungültige GPS-Koordinaten. Bitte aktualisiere deinen Standort.")
             return
         }
         
         isSaving = true
         
+        print("📝 MemoryCreationViewModel: Erstelle Memory mit:")
+        print("   - Titel: '\(title)'")
+        print("   - Inhalt: '\(content)'")
+        print("   - Koordinaten: \(lat), \(lon)")
+        print("   - Trip: \(trip.title ?? "Unknown")")
+        print("   - User: \(user.displayName ?? "Unknown")")
+        
+        // Direkte Memory-Erstellung im Main Context für Context-Kompatibilität
         do {
-            // Create Memory using CoreDataManager
+            // Memory direkt im viewContext erstellen - alle Objekte sind aus dem gleichen Context
             let memory = coreDataManager.createMemory(
                 title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                 content: content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content.trimmingCharacters(in: .whitespacesAndNewlines),
-                latitude: currentLocation?.coordinate.latitude ?? 0.0,
-                longitude: currentLocation?.coordinate.longitude ?? 0.0,
-                author: user,
-                trip: trip
+                latitude: lat,
+                longitude: lon,
+                author: user, // user ist aus viewContext
+                trip: trip    // trip ist aus viewContext
             )
             
-            // Save photo if available
+            // Context speichern
+            try coreDataManager.viewContext.save()
+            
+            print("✅ MemoryCreationViewModel: Memory erfolgreich gespeichert")
+            
+            // Foto separat speichern falls vorhanden und mit Memory verknüpfen
             if let image = selectedImage {
-                let photo = coreDataManager.createPhoto(
-                    filename: "memory_\(UUID().uuidString).jpg",
-                    localURL: nil, // In Production hier lokale Speicherung
-                    memory: memory
-                )
-                
-                // TODO: In Production hier Foto speichern
-                print("📷 MemoryCreationViewModel: Foto würde gespeichert für \(photo.filename ?? "unknown")")
+                await savePhotoOptimized(image: image, for: memory)
             }
             
-            // Save Core Data context
-            guard coreDataManager.save() else {
-                throw NSError(domain: "MemoryCreation", code: 1, userInfo: [NSLocalizedDescriptionKey: "Fehler beim Speichern in Core Data"])
-            }
-            
-            print("✅ MemoryCreationViewModel: Memory erfolgreich erstellt: \(title)")
-            
-            // Show success
+            isSaving = false
             showingSuccess = true
             
-            // Reset form
-            resetForm()
+            // Nach kurzer Verzögerung Form zurücksetzen
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                self.resetForm()
+            }
             
         } catch {
-            showError("Fehler beim Speichern: \(error.localizedDescription)")
+            print("❌ MemoryCreationViewModel: Memory-Speicherung fehlgeschlagen: \(error.localizedDescription)")
+            isSaving = false
+            showError("Fehler beim Speichern in der Datenbank: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Optimierte Foto-Speicherung mit Core Data Verknüpfung
+    private func savePhotoOptimized(image: UIImage, for memory: Memory) async {
+        print("📷 MemoryCreationViewModel: Speichere Foto optimiert...")
+        
+        // Vereinfachte synchrone Verarbeitung
+        let maxDimension: CGFloat = 800
+        let resizedImage = resizeImage(image, maxDimension: maxDimension)
+        
+        guard let compressedData = resizedImage.jpegData(compressionQuality: 0.4) else {
+            print("❌ MemoryCreationViewModel: Bild-Komprimierung fehlgeschlagen")
+            return
         }
         
-        isSaving = false
+        let fileSizeKB = compressedData.count / 1024
+        print("📷 MemoryCreationViewModel: Bild optimiert - Größe: \(fileSizeKB)KB")
+        
+        // Dateiname generieren
+        let filename = "memory_\(UUID().uuidString.prefix(8)).jpg"
+        
+        // Speichere in Documents Directory
+        guard let localURL = saveToDocuments(data: compressedData, filename: filename) else {
+            print("❌ MemoryCreationViewModel: Fehler beim Speichern der Datei")
+            return
+        }
+        
+        // Photo-Entity in Core Data erstellen und mit Memory verknüpfen
+        let photo = coreDataManager.createPhoto(
+            filename: filename,
+            localURL: localURL,
+            memory: memory
+        )
+        
+        do {
+            // Context erneut speichern für die Photo-Entity
+            try coreDataManager.viewContext.save()
+            print("✅ MemoryCreationViewModel: Photo-Entity erfolgreich erstellt und verknüpft")
+        } catch {
+            print("❌ MemoryCreationViewModel: Fehler beim Speichern der Photo-Entity: \(error)")
+        }
+    }
+    
+    /// Einfache Bild-Resize-Funktion
+    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        let maxCurrentDimension = max(size.width, size.height)
+        
+        guard maxCurrentDimension > maxDimension else { return image }
+        
+        let ratio = maxDimension / maxCurrentDimension
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+    
+    /// Einfache Datei-Speicherung
+    private func saveToDocuments(data: Data, filename: String) -> String? {
+        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("❌ MemoryCreationViewModel: Documents Directory nicht verfügbar")
+            return nil
+        }
+        
+        let fileURL = documentsDirectory.appendingPathComponent(filename)
+        
+        do {
+            try data.write(to: fileURL)
+            print("✅ MemoryCreationViewModel: Bild gespeichert: \(fileURL.lastPathComponent)")
+            return fileURL.path  // String-Pfad für Core Data zurückgeben
+        } catch {
+            print("❌ MemoryCreationViewModel: Fehler beim Speichern: \(error)")
+            return nil
+        }
     }
     
     // MARK: - Helper Methods
-    private func resetForm() {
-        title = ""
-        content = ""
-        selectedImage = nil
-        photoPickerItem = nil
-        // Location bleibt für nächstes Memory
-    }
-    
     private func showError(_ message: String) {
         errorMessage = message
         showingError = true
@@ -246,22 +420,13 @@ class MemoryCreationViewModel: ObservableObject {
             completion(false)
         }
     }
-}
-
-// MARK: - Errors
-enum MemoryCreationError: LocalizedError {
-    case imageCompressionFailed
-    case locationNotAvailable
-    case coreDataSaveFailed
     
-    var errorDescription: String? {
-        switch self {
-        case .imageCompressionFailed:
-            return "Foto konnte nicht komprimiert werden"
-        case .locationNotAvailable:
-            return "GPS-Position nicht verfügbar"
-        case .coreDataSaveFailed:
-            return "Speichern in Core Data fehlgeschlagen"
-        }
+    // MARK: - Form Reset
+    func resetForm() {
+        title = ""
+        content = ""
+        selectedImage = nil
+        photoPickerItem = nil
+        updateLocation()
     }
 } 

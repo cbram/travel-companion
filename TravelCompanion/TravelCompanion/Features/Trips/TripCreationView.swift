@@ -4,6 +4,7 @@ import SwiftUI
 /// Bietet ein einfaches Formular mit Validation und automatischer Navigation
 struct TripCreationView: View {
     @StateObject private var viewModel = TripCreationViewModel()
+    @EnvironmentObject private var tripManager: TripManager
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -87,7 +88,7 @@ struct TripCreationView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Erstellen") {
-                        viewModel.createTrip {
+                        viewModel.createTrip(using: tripManager) {
                             dismiss()
                         }
                     }
@@ -136,7 +137,7 @@ class TripCreationViewModel: ObservableObject {
     }
     
     // MARK: - Trip Creation
-    func createTrip(completion: @escaping () -> Void) {
+    func createTrip(using tripManager: TripManager, completion: @escaping () -> Void) {
         guard isValid else {
             showError(message: "Bitte geben Sie einen Titel für die Reise ein.")
             return
@@ -150,7 +151,7 @@ class TripCreationViewModel: ObservableObject {
             let trimmedDescription = self.description.trimmingCharacters(in: .whitespacesAndNewlines)
             let finalDescription = trimmedDescription.isEmpty ? nil : trimmedDescription
             
-            guard let newTrip = TripManager.shared.createTrip(
+            guard let newTrip = tripManager.createTrip(
                 title: self.title,
                 description: finalDescription,
                 startDate: self.startDate
@@ -162,7 +163,7 @@ class TripCreationViewModel: ObservableObject {
             
             // Als aktive Reise setzen wenn gewünscht
             if self.setAsActive {
-                TripManager.shared.setActiveTrip(newTrip)
+                tripManager.setActiveTrip(newTrip)
             }
             
             self.isCreating = false
@@ -194,5 +195,7 @@ extension DateFormatter {
 struct TripCreationView_Previews: PreviewProvider {
     static var previews: some View {
         TripCreationView()
+            .environmentObject(TripManager.shared)
+            .environmentObject(UserManager.shared)
     }
 } 

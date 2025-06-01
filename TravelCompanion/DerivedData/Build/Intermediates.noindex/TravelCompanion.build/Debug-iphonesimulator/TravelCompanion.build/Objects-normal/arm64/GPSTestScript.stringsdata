@@ -1,0 +1,88 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/Location/GPSTestScript.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "GPS Test Script",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 298
+        }
+      },
+      {
+        "comment": "",
+        "key": "Test Status",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 254
+        }
+      },
+      {
+        "comment": "",
+        "key": "Berechtigung: %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 263
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lat: %.6f",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 268
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lon: %.6f",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 270
+        }
+      },
+      {
+        "comment": "",
+        "key": "GPS aktiv",
+        "location": {
+          "startingColumn": 63,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "GPS gestoppt",
+        "location": {
+          "startingColumn": 77,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "Komplett-Test starten",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 279
+        }
+      },
+      {
+        "comment": "",
+        "key": "Quick Test",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 285
+        }
+      },
+      {
+        "comment": "",
+        "key": "Test stoppen",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 290
+        }
+      }
+    ]
+  },
+  "version": 1
+}

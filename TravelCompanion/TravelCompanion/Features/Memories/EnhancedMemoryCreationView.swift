@@ -244,13 +244,13 @@ struct EnhancedMemoryCreationView: View {
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text("📍 \(location.coordinate.latitude, specifier: "%.6f"), \(location.coordinate.longitude, specifier: "%.6f")")
+                Text("📍 \(location.formattedCoordinates)")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text("Genauigkeit: ±\(Int(location.horizontalAccuracy))m")
+                Text("Genauigkeit: \(location.formattedAccuracy)")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(location.horizontalAccuracy >= 0 ? .secondary : .orange)
                 
                 // Reverse Geocoding Adresse
                 if let address = viewModel.locationAddress {
@@ -412,7 +412,7 @@ struct LocationPickerView: View {
     let currentLocation: CLLocation?
     @Binding var isPresented: Bool
     
-    @State private var region: MKCoordinateRegion
+    @State private var cameraPosition: MapCameraPosition
     @State private var selectedCoordinate: CLLocationCoordinate2D?
     
     init(selectedLocation: Binding<CLLocation?>, currentLocation: CLLocation?, isPresented: Binding<Bool>) {
@@ -421,21 +421,35 @@ struct LocationPickerView: View {
         self._isPresented = isPresented
         
         let initialCoordinate = currentLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 52.5200, longitude: 13.4050) // Berlin default
-        self._region = State(initialValue: MKCoordinateRegion(
+        self._cameraPosition = State(initialValue: .region(MKCoordinateRegion(
             center: initialCoordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        ))
+        )))
     }
     
     var body: some View {
         NavigationView {
             VStack {
-                Map(coordinateRegion: $region, showsUserLocation: true, annotationItems: selectedCoordinate != nil ? [MapAnnotation(coordinate: selectedCoordinate!)] : []) { annotation in
-                    MapPin(coordinate: annotation.coordinate, tint: .red)
+                Map(position: $cameraPosition, interactionModes: .all) {
+                    // User location
+                    if currentLocation != nil {
+                        UserAnnotation()
+                    }
+                    
+                    // Selected location annotation
+                    if let coordinate = selectedCoordinate {
+                        Annotation("Ausgewählter Standort", coordinate: coordinate) {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.title)
+                                .background(Circle().fill(Color.white).frame(width: 30, height: 30))
+                                .shadow(radius: 2)
+                        }
+                    }
                 }
-                .onTapGesture { location in
-                    let coordinate = region.center
-                    selectedCoordinate = coordinate
+                .onMapCameraChange { position in
+                    // Update selected coordinate to map center when camera moves
+                    selectedCoordinate = position.region.center
                 }
                 .overlay(
                     // Crosshair in center
@@ -447,23 +461,27 @@ struct LocationPickerView: View {
                 )
                 
                 VStack(spacing: 12) {
-                    if let coordinate = selectedCoordinate ?? region.center as CLLocationCoordinate2D? {
+                    if let coordinate = selectedCoordinate {
                         Text("📍 \(coordinate.latitude, specifier: "%.6f"), \(coordinate.longitude, specifier: "%.6f")")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     
                     HStack {
-                        if currentLocation != nil {
+                        if let currentLocation = currentLocation {
                             Button("Aktuelle Position") {
-                                region.center = currentLocation!.coordinate
-                                selectedCoordinate = currentLocation!.coordinate
+                                let newRegion = MKCoordinateRegion(
+                                    center: currentLocation.coordinate,
+                                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                )
+                                cameraPosition = .region(newRegion)
+                                selectedCoordinate = currentLocation.coordinate
                             }
                             .buttonStyle(.bordered)
                         }
                         
                         Button("Auswählen") {
-                            if let coordinate = selectedCoordinate ?? region.center as CLLocationCoordinate2D? {
+                            if let coordinate = selectedCoordinate {
                                 selectedLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
                             }
                             isPresented = false
@@ -484,14 +502,10 @@ struct LocationPickerView: View {
             }
         }
         .onAppear {
-            selectedCoordinate = region.center
+            // Set initial selected coordinate to camera center
+            selectedCoordinate = cameraPosition.region?.center
         }
     }
-}
-
-struct MapAnnotation: Identifiable {
-    let id = UUID()
-    let coordinate: CLLocationCoordinate2D
 }
 
 // MARK: - Preview

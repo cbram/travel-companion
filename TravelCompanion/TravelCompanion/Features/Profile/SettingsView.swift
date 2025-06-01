@@ -5,10 +5,60 @@ import CoreLocation
 /// Zeigt App-Informationen und grundlegende Einstellungen
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    @EnvironmentObject private var tripManager: TripManager
+    @EnvironmentObject private var userManager: UserManager
     
     var body: some View {
         NavigationView {
             List {
+                // User Info Section
+                Section("Benutzer") {
+                    HStack {
+                        Image(systemName: "person.circle.fill")
+                            .foregroundColor(.blue)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(userManager.currentUser?.formattedDisplayName ?? "Unbekannt")
+                                .font(.headline)
+                            Text(userManager.currentUser?.email ?? "")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                }
+                
+                // Trip Statistics Section
+                Section("Reise-Statistiken") {
+                    HStack {
+                        Image(systemName: "suitcase.fill")
+                            .foregroundColor(.green)
+                        Text("Reisen")
+                        Spacer()
+                        Text("\(tripManager.allTrips.count)")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack {
+                        Image(systemName: "location.fill")
+                            .foregroundColor(.red)
+                        Text("Memories")
+                        Spacer()
+                        Text("\(viewModel.totalMemoriesCount)")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if let currentTrip = tripManager.currentTrip {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Aktive Reise")
+                            Spacer()
+                            Text(currentTrip.title ?? "Unbekannt")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
                 // App Info Section
                 Section("App Information") {
                     HStack {
@@ -52,7 +102,7 @@ struct SettingsView: View {
                             .foregroundColor(.purple)
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Lokale Daten")
-                            Text("Reisen, Footsteps und Fotos")
+                            Text("Reisen, Memories und Fotos")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -88,7 +138,7 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
-                        viewModel.showDataSummary()
+                        viewModel.showDataSummary(trips: tripManager.allTrips)
                     }) {
                         HStack {
                             Image(systemName: "chart.bar.fill")
@@ -135,7 +185,7 @@ struct SettingsView: View {
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.large)
             .refreshable {
-                viewModel.refreshData()
+                viewModel.refreshData(trips: tripManager.allTrips)
             }
             .alert("Cache leeren", isPresented: $viewModel.showClearCacheAlert) {
                 Button("Löschen", role: .destructive) {
@@ -152,7 +202,7 @@ struct SettingsView: View {
             }
         }
         .onAppear {
-            viewModel.refreshData()
+            viewModel.refreshData(trips: tripManager.allTrips)
         }
     }
 }
@@ -162,6 +212,7 @@ class SettingsViewModel: ObservableObject {
     @Published var showClearCacheAlert = false
     @Published var showInfoAlert = false
     @Published var infoMessage = ""
+    @Published var totalMemoriesCount = 0
     
     // MARK: - App Info Properties
     var appVersion: String {
@@ -223,95 +274,89 @@ class SettingsViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Data Properties
     var dataSize: String {
-        // Einfache Schätzung der Datengröße
-        let trips = TripManager.shared.getAllTrips()
-        let totalFootsteps = trips.reduce(0) { total, trip in
-            let footsteps = CoreDataManager.shared.fetchFootsteps(for: trip)
-            return total + footsteps.count
-        }
-        
-        if totalFootsteps == 0 {
-            return "Keine Daten"
-        } else if totalFootsteps < 10 {
-            return "< 1 MB"
-        } else {
-            let estimatedMB = totalFootsteps / 10
-            return "≈ \(estimatedMB) MB"
-        }
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let size = try? FileManager.default.allocatedSizeOfDirectory(at: url)
+        return ByteCountFormatter.string(fromByteCount: Int64(size ?? 0), countStyle: .file)
     }
     
     // MARK: - Actions
-    func refreshData() {
-        // Aktualisiert die angezeigten Daten
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
-        }
+    func refreshData(trips: [Trip]) {
+        // Calculate total memories count from all trips
+        totalMemoriesCount = trips.reduce(0) { $0 + $1.memoriesCount }
     }
     
     func openLocationSettings() {
-        guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else { return }
-        
-        if UIApplication.shared.canOpenURL(settingsUrl) {
+        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(settingsUrl)
         }
     }
     
     func clearCache() {
-        // Cache leeren (in Production würde hier UserDefaults und temporäre Dateien gelöscht)
-        UserDefaults.standard.removeObject(forKey: "cached_locations")
+        // Clear UserDefaults
+        let domain = Bundle.main.bundleIdentifier!
+        UserDefaults.standard.removePersistentDomain(forName: domain)
+        UserDefaults.standard.synchronize()
         
-        showInfo(message: "Cache wurde erfolgreich geleert.")
-        print("✅ SettingsView: Cache geleert")
+        showInfo("Cache wurde geleert")
+    }
+    
+    func createSampleData() {
+        SampleDataCreator.createSampleData(in: CoreDataManager.shared.viewContext)
+        showInfo("Sample Data wurde erstellt")
+    }
+    
+    func showDataSummary(trips: [Trip]) {
+        let tripsCount = trips.count
+        let memoriesCount = totalMemoriesCount
+        let message = "Trips: \(tripsCount)\nMemories: \(memoriesCount)"
+        showInfo(message)
+    }
+    
+    func testLocationServices() {
+        LocationManager.shared.requestPermission()
+        showInfo("GPS Test gestartet - siehe Console für Details")
     }
     
     func sendFeedback() {
-        // Feedback E-Mail öffnen
-        let email = "feedback@travelcompanion.app"
-        let subject = "TravelCompanion Feedback"
-        let body = "Hallo TravelCompanion Team,\n\n"
-        
-        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        
-        if let url = URL(string: "mailto:\(email)?subject=\(encodedSubject)&body=\(encodedBody)") {
+        if let url = URL(string: "mailto:feedback@travelcompanion.app") {
             UIApplication.shared.open(url)
         }
     }
     
     func rateApp() {
-        // App Store Bewertung öffnen (Placeholder)
-        showInfo(message: "App Store Bewertung ist in der Vollversion verfügbar.")
+        // In Production würde hier der App Store Link verwendet
+        showInfo("App Store Rating würde geöffnet")
     }
     
-    // MARK: - Development Actions
-    #if DEBUG
-    func createSampleData() {
-        SampleDataCreator.createSampleData(in: CoreDataManager.shared.viewContext)
-        showInfo(message: "Sample Data wurde erstellt.")
-        print("✅ SettingsView: Sample Data erstellt")
-    }
-    
-    func showDataSummary() {
-        let trips = TripManager.shared.getAllTrips()
-        let totalFootsteps = trips.reduce(0) { total, trip in
-            let footsteps = CoreDataManager.shared.fetchFootsteps(for: trip)
-            return total + footsteps.count
-        }
-        showInfo(message: "Daten-Zusammenfassung: \(trips.count) Reisen, \(totalFootsteps) Footsteps")
-    }
-    
-    func testLocationServices() {
-        LocationManager.shared.requestPermission()
-        showInfo(message: "GPS Test gestartet. Prüfen Sie die Konsole für Details.")
-        print("🧪 SettingsView: GPS Test gestartet")
-    }
-    #endif
-    
-    // MARK: - Helper Methods
-    private func showInfo(message: String) {
+    private func showInfo(_ message: String) {
         infoMessage = message
         showInfoAlert = true
+    }
+}
+
+// MARK: - FileManager Extension
+extension FileManager {
+    func allocatedSizeOfDirectory(at url: URL) throws -> UInt64 {
+        let resourceKeys: [URLResourceKey] = [
+            .isRegularFileKey,
+            .fileAllocatedSizeKey,
+            .totalFileAllocatedSizeKey,
+        ]
+        
+        var size: UInt64 = 0
+        let enumerator = enumerator(at: url, includingPropertiesForKeys: resourceKeys)!
+        
+        for case let fileURL as URL in enumerator {
+            let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
+            
+            if resourceValues.isRegularFile == true {
+                size += UInt64(resourceValues.totalFileAllocatedSize ?? resourceValues.fileAllocatedSize ?? 0)
+            }
+        }
+        
+        return size
     }
 }
 
@@ -319,5 +364,7 @@ class SettingsViewModel: ObservableObject {
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsView()
+            .environmentObject(TripManager.shared)
+            .environmentObject(UserManager.shared)
     }
 } 

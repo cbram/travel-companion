@@ -92,7 +92,16 @@ struct PhotoPicker: View {
                 viewModel.loadedImages.removeAll()
             }
             .alert("Fehler", isPresented: $viewModel.showingError) {
-                Button("OK") { }
+                if viewModel.errorMessage.contains("Kamera-Berechtigung") {
+                    Button("Einstellungen") {
+                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(settingsUrl)
+                        }
+                    }
+                    Button("Abbrechen", role: .cancel) { }
+                } else {
+                    Button("OK") { }
+                }
             } message: {
                 Text(viewModel.errorMessage)
             }
@@ -276,7 +285,7 @@ class PhotoPickerViewModel: ObservableObject {
                     self?.imageSourceType = .camera
                     self?.showingImagePicker = true
                 } else {
-                    self?.showError("Kamera-Berechtigung erforderlich")
+                    self?.showCameraPermissionError()
                 }
             }
         }
@@ -321,6 +330,10 @@ class PhotoPickerViewModel: ObservableObject {
         @unknown default:
             completion(false)
         }
+    }
+    
+    private func showCameraPermissionError() {
+        showError("Kamera-Berechtigung wurde verweigert. Bitte aktivieren Sie diese in den Einstellungen, um Fotos aufnehmen zu können.")
     }
     
     private func showError(_ message: String) {

@@ -1,0 +1,328 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/EnhancedMemoryCreationView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Neue Erinnerung",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erfolg",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 75
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fehler",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 82
+        }
+      },
+      {
+        "comment": "",
+        "key": "Details",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 158
+        }
+      },
+      {
+        "comment": "",
+        "key": "Standort",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 188
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fotos (%lld/5)",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 290
+        }
+      },
+      {
+        "comment": "",
+        "key": "Zeitpunkt",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 354
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 47
+        }
+      },
+      {
+        "comment": "",
+        "key": "Speichern",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erinnerung wurde erfolgreich gespeichert!",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 80
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "Neue Erinnerung",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "für %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "Was hast du erlebt?",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erforderlich",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 164
+        }
+      },
+      {
+        "comment": "",
+        "key": "Titel",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "Beschreibung",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 176
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erzähle mehr über diesen besonderen Moment...",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "GPS aktualisieren",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 202
+        }
+      },
+      {
+        "comment": "",
+        "key": "Manuell wählen",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 210
+        }
+      },
+      {
+        "comment": "",
+        "key": "GPS wird aktualisiert...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 219
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aktuelle Position",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 233
+        }
+      },
+      {
+        "comment": "",
+        "key": "GPS verwenden",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 238
+        }
+      },
+      {
+        "comment": "",
+        "key": "📍 %.6f, %.6f",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 247
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genauigkeit: ±%lldm",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 251
+        }
+      },
+      {
+        "comment": "",
+        "key": "📍 %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 257
+        }
+      },
+      {
+        "comment": "",
+        "key": "Kein GPS-Signal verfügbar",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 275
+        }
+      },
+      {
+        "comment": "",
+        "key": "Standort kann manuell hinzugefügt werden",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 279
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fotos hinzufügen",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 307
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keine Fotos hinzugefügt",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 343
+        }
+      },
+      {
+        "comment": "",
+        "key": "Wann ist das passiert?",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 356
+        }
+      },
+      {
+        "comment": "",
+        "key": "📱 Offline-Modus: Erinnerung wird lokal gespeichert und später synchronisiert",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 389
+        }
+      },
+      {
+        "comment": "",
+        "key": "Speichern...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 375
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erinnerung speichern",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 378
+        }
+      },
+      {
+        "comment": "",
+        "key": "Standort wählen",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 476
+        }
+      },
+      {
+        "comment": "",
+        "key": "📍 %.6f, %.6f",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 451
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aktuelle Position",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 458
+        }
+      },
+      {
+        "comment": "",
+        "key": "Auswählen",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 465
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 480
+        }
+      }
+    ]
+  },
+  "version": 1
+}

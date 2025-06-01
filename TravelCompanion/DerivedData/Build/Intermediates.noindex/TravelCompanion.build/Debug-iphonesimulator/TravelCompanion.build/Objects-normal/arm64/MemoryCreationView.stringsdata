@@ -1,0 +1,248 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/MemoryCreationView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Neue Erinnerung",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fehler",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 65
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erfolg",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keine aktive Reise",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 78
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 71
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erinnerung wurde erfolgreich gespeichert!",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Zu den Reisen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 79
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bitte wählen Sie zuerst eine aktive Reise aus.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "Neue Erinnerung erstellen",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Halte deine Reisemomente fest",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 114
+        }
+      },
+      {
+        "comment": "",
+        "key": "Für: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 126
+        }
+      },
+      {
+        "comment": "",
+        "key": "AKTIV",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 130
+        }
+      },
+      {
+        "comment": "",
+        "key": "Titel",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 154
+        }
+      },
+      {
+        "comment": "",
+        "key": "Was hast du erlebt?",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 158
+        }
+      },
+      {
+        "comment": "",
+        "key": "Beschreibung",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 166
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erzähle mehr über diesen Moment...",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 170
+        }
+      },
+      {
+        "comment": "",
+        "key": "Standort",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 180
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aktualisieren",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 203
+        }
+      },
+      {
+        "comment": "",
+        "key": "GPS-Position wird ermittelt...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 195
+        }
+      },
+      {
+        "comment": "",
+        "key": "📍 %.6f, %.6f",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 187
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genauigkeit: ±%lldm",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 191
+        }
+      },
+      {
+        "comment": "",
+        "key": "Foto",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 217
+        }
+      },
+      {
+        "comment": "",
+        "key": "Foto entfernen",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "Kamera",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 246
+        }
+      },
+      {
+        "comment": "",
+        "key": "Galerie",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 262
+        }
+      },
+      {
+        "comment": "",
+        "key": "Speichert...",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 289
+        }
+      },
+      {
+        "comment": "",
+        "key": "Memory speichern",
+        "location": {
+          "startingColumn": 60,
+          "startingLine": 289
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -3,6 +3,12 @@ import CoreData
 
 struct SampleDataCreator {
     static func createSampleData(in context: NSManagedObjectContext) {
+        // ✅ Prüfe ob bereits Sample Data existieren
+        if hasExistingData(in: context) {
+            print("✅ SampleDataCreator: Sample Data bereits vorhanden - überspringe Erstellung")
+            return
+        }
+        
         // Erstelle Sample Users
         let user1 = createUser1(in: context)
         let user2 = createUser2(in: context)
@@ -36,6 +42,7 @@ struct SampleDataCreator {
     // MARK: - User Creation
     private static func createUser1(in context: NSManagedObjectContext) -> User {
         let user = User(context: context)
+        user.id = UUID()
         user.email = "alice@travelcompanion.app"
         user.displayName = "Alice Müller"
         user.createdAt = Date()
@@ -46,6 +53,7 @@ struct SampleDataCreator {
     
     private static func createUser2(in context: NSManagedObjectContext) -> User {
         let user = User(context: context)
+        user.id = UUID()
         user.email = "bob@travelcompanion.app"
         user.displayName = "Bob Schmidt"
         user.createdAt = Date()
@@ -56,6 +64,7 @@ struct SampleDataCreator {
     
     private static func createUser3(in context: NSManagedObjectContext) -> User {
         let user = User(context: context)
+        user.id = UUID()
         user.email = "charlie@travelcompanion.app"
         user.displayName = "Charlie Weber"
         user.createdAt = Date()
@@ -67,6 +76,7 @@ struct SampleDataCreator {
     // MARK: - Trip Creation
     private static func createTrip1(with owner: User, in context: NSManagedObjectContext) -> Trip {
         let trip = Trip(context: context)
+        trip.id = UUID()
         trip.title = "Sommerurlaub Italien"
         trip.tripDescription = "Entspannter Familienurlaub an der Amalfiküste"
         trip.startDate = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
@@ -79,6 +89,7 @@ struct SampleDataCreator {
     
     private static func createTrip2(with owner: User, in context: NSManagedObjectContext) -> Trip {
         let trip = Trip(context: context)
+        trip.id = UUID()
         trip.title = "Wochenendtrip Berlin"
         trip.tripDescription = "Städtetrip mit Freunden"
         trip.startDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
@@ -91,6 +102,7 @@ struct SampleDataCreator {
     
     private static func createTrip3(with owner: User, in context: NSManagedObjectContext) -> Trip {
         let trip = Trip(context: context)
+        trip.id = UUID()
         trip.title = "Aktuelle Reise München"
         trip.tripDescription = "Geschäftsreise nach München"
         trip.startDate = Date()
@@ -105,6 +117,7 @@ struct SampleDataCreator {
     private static func createMemoriesForTrip1(_ trip: Trip, users: [User], in context: NSManagedObjectContext) {
         // Memory 1 mit Photo
         let memory1 = Memory(context: context)
+        memory1.id = UUID()
         memory1.title = "Ankunft am Strand"
         memory1.content = "Endlich angekommen! Der Strand ist wunderschön."
         memory1.latitude = 40.6318
@@ -116,6 +129,7 @@ struct SampleDataCreator {
         
         // Photo für Memory 1
         let photo1 = Photo(context: context)
+        photo1.id = UUID()
         photo1.filename = "beach_arrival.jpg"
         photo1.localURL = "/Documents/Photos/beach_arrival.jpg"
         photo1.cloudURL = "https://cloud.example.com/photos/beach_arrival.jpg"
@@ -124,6 +138,7 @@ struct SampleDataCreator {
         
         // Memory 2
         let memory2 = Memory(context: context)
+        memory2.id = UUID()
         memory2.title = "Pizza am Hafen"
         memory2.content = "Beste Pizza meines Lebens! 🍕"
         memory2.latitude = 40.6328
@@ -135,6 +150,7 @@ struct SampleDataCreator {
         
         // Memory 3
         let memory3 = Memory(context: context)
+        memory3.id = UUID()
         memory3.title = "Sonnenuntergang"
         memory3.content = "Magischer Sonnenuntergang über dem Meer"
         memory3.latitude = 40.6315
@@ -148,6 +164,7 @@ struct SampleDataCreator {
     private static func createMemoriesForTrip2(_ trip: Trip, users: [User], in context: NSManagedObjectContext) {
         // Memory 1
         let memory1 = Memory(context: context)
+        memory1.id = UUID()
         memory1.title = "Brandenburger Tor"
         memory1.content = "Klassisches Berlin-Foto geschossen!"
         memory1.latitude = 52.5163
@@ -159,6 +176,7 @@ struct SampleDataCreator {
         
         // Memory 2
         let memory2 = Memory(context: context)
+        memory2.id = UUID()
         memory2.title = "Museumsinsel"
         memory2.content = "So viel Geschichte an einem Ort"
         memory2.latitude = 52.5218
@@ -172,6 +190,7 @@ struct SampleDataCreator {
     private static func createMemoriesForTrip3(_ trip: Trip, users: [User], in context: NSManagedObjectContext) {
         // Memory 1
         let memory1 = Memory(context: context)
+        memory1.id = UUID()
         memory1.title = "München Hauptbahnhof"
         memory1.content = "Angekommen in München! Zeit für Weißwurst 🥨"
         memory1.latitude = 48.1401
@@ -209,7 +228,7 @@ struct SampleDataCreator {
     }
     
     static func hasExistingData(in context: NSManagedObjectContext) -> Bool {
-        let memoryRequest: NSFetchRequest<Memory> = Memory.fetchRequest()
+        let memoryRequest = Memory.fetchRequest()
         
         do {
             let count = try context.count(for: memoryRequest)

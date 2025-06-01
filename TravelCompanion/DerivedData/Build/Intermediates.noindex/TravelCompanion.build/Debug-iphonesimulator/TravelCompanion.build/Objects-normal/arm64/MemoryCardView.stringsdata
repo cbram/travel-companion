@@ -1,0 +1,40 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/MemoryCardView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bearbeiten",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 152
+        }
+      },
+      {
+        "comment": "",
+        "key": "Löschen",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 158
+        }
+      }
+    ]
+  },
+  "version": 1
+}

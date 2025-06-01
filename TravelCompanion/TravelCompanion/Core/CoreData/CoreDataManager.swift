@@ -8,28 +8,9 @@ class CoreDataManager {
     static let shared = CoreDataManager()
     
     // MARK: - Core Data Stack
-    lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "TravelCompanion")
-        
-        // Performance-Optimierungen
-        container.persistentStoreDescriptions.forEach { storeDescription in
-            storeDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-            storeDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
-        }
-        
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-            if let error = error as? NSError {
-                fatalError("❌ CoreDataManager: Failed to load store: \(error)")
-            } else {
-                print("✅ CoreDataManager: Persistent store loaded successfully")
-            }
-        })
-        
-        container.viewContext.automaticallyMergesChangesFromParent = true
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        
-        return container
-    }()
+    var persistentContainer: NSPersistentContainer {
+        return PersistenceController.shared.container
+    }
     
     // MARK: - Computed Properties
     var viewContext: NSManagedObjectContext {
@@ -41,7 +22,9 @@ class CoreDataManager {
     }
     
     // MARK: - Initialization
-    private init() {}
+    private init() {
+        print("✅ CoreDataManager: Using PersistenceController.shared")
+    }
     
     // MARK: - Core Data Saving Support
     
@@ -93,7 +76,7 @@ class CoreDataManager {
     }
     
     func fetchAllUsers() -> [User] {
-        let request: NSFetchRequest<User> = User.fetchRequest()
+        let request = User.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \User.displayName, ascending: true)]
         
         do {
@@ -120,7 +103,7 @@ class CoreDataManager {
     }
     
     func fetchTrips(for user: User) -> [Trip] {
-        let request: NSFetchRequest<Trip> = Trip.fetchRequest()
+        let request = Trip.fetchRequest()
         request.predicate = NSPredicate(format: "owner == %@ OR ANY participants == %@", user, user)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Trip.startDate, ascending: false)]
         
@@ -140,6 +123,7 @@ class CoreDataManager {
     
     @discardableResult
     func createMemory(title: String, content: String?, latitude: Double, longitude: Double, author: User, trip: Trip) -> Memory {
+        // Performance-optimierte Erstellung im Main Context
         let memory = Memory(context: viewContext)
         memory.id = UUID()
         memory.title = title
@@ -150,7 +134,70 @@ class CoreDataManager {
         memory.createdAt = Date()
         memory.author = author
         memory.trip = trip
+        
+        // Sofortige Validierung der Relationships
+        if memory.author == nil || memory.trip == nil {
+            print("⚠️ CoreDataManager: Memory-Relationships nicht korrekt gesetzt")
+        }
+        
         return memory
+    }
+    
+    /// Optimierte Background Memory-Erstellung - FIXED für Context-Kompatibilität
+    func createMemoryInBackground(title: String, content: String?, latitude: Double, longitude: Double, authorID: UUID, tripID: UUID, completion: @escaping (Bool) -> Void) {
+        // WICHTIG: Verwende performBackgroundTask für bessere Context-Isolation
+        performBackgroundTask { [weak self] context in
+            guard self != nil else {
+                DispatchQueue.main.async { completion(false) }
+                return
+            }
+            
+            // Batch-Fetch für bessere Performance
+            let authorRequest = User.fetchRequest()
+            authorRequest.predicate = NSPredicate(format: "id == %@", authorID as CVarArg)
+            authorRequest.fetchLimit = 1
+            authorRequest.returnsObjectsAsFaults = false // Eager Loading für bessere Performance
+            
+            let tripRequest = Trip.fetchRequest()
+            tripRequest.predicate = NSPredicate(format: "id == %@", tripID as CVarArg)
+            tripRequest.fetchLimit = 1
+            tripRequest.returnsObjectsAsFaults = false // Eager Loading für bessere Performance
+            
+            do {
+                // Optimierte synchrone Fetches für bessere Performance
+                let authorResults = try context.fetch(authorRequest)
+                let tripResults = try context.fetch(tripRequest)
+                
+                guard let author = authorResults.first,
+                      let trip = tripResults.first else {
+                    print("❌ CoreDataManager: Author oder Trip nicht im Background Context gefunden")
+                    DispatchQueue.main.async { completion(false) }
+                    return
+                }
+                
+                // Memory erstellen mit optimierten Eigenschaften
+                let memory = Memory(context: context)
+                memory.id = UUID()
+                memory.title = title.trimmingCharacters(in: .whitespacesAndNewlines) // Trim whitespace
+                memory.content = content?.trimmingCharacters(in: .whitespacesAndNewlines)
+                memory.latitude = latitude
+                memory.longitude = longitude
+                memory.timestamp = Date()
+                memory.createdAt = Date()
+                memory.author = author
+                memory.trip = trip
+                
+                // Batch-Save für bessere Performance
+                try context.save()
+                
+                print("✅ CoreDataManager: Memory im Background erstellt (optimiert)")
+                DispatchQueue.main.async { completion(true) }
+                
+            } catch {
+                print("❌ CoreDataManager: Background Memory creation failed: \(error)")
+                DispatchQueue.main.async { completion(false) }
+            }
+        }
     }
     
     // Alias methods for consistency with Footstep naming
@@ -168,7 +215,7 @@ class CoreDataManager {
     }
     
     func fetchFootsteps(for user: User, from startDate: Date, to endDate: Date) -> [Memory] {
-        let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+        let request = Memory.fetchRequest()
         request.predicate = NSPredicate(format: "author == %@ AND timestamp >= %@ AND timestamp <= %@", user, startDate as NSDate, endDate as NSDate)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
         
@@ -183,7 +230,7 @@ class CoreDataManager {
     func fetchFootsteps(near latitude: Double, longitude: Double, radius: Double) -> [Memory] {
         // Vereinfachte Implementierung ohne Core Location Framework
         // In Production würde hier eine geografische Suche implementiert
-        let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+        let request = Memory.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
         
         do {
@@ -223,7 +270,7 @@ class CoreDataManager {
     // MARK: - Fetch Helpers
     
     func fetchActiveTrip(for user: User) -> Trip? {
-        let request: NSFetchRequest<Trip> = Trip.fetchRequest()
+        let request = Trip.fetchRequest()
         request.predicate = NSPredicate(format: "owner == %@ AND isActive == YES", user)
         request.fetchLimit = 1
         
@@ -236,7 +283,7 @@ class CoreDataManager {
     }
     
     func fetchAllTrips() -> [Trip] {
-        let request: NSFetchRequest<Trip> = Trip.fetchRequest()
+        let request = Trip.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Trip.startDate, ascending: false)]
         
         do {
@@ -248,7 +295,7 @@ class CoreDataManager {
     }
     
     func fetchMemories(for trip: Trip) -> [Memory] {
-        let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+        let request = Memory.fetchRequest()
         request.predicate = NSPredicate(format: "trip == %@", trip)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
         
@@ -261,7 +308,7 @@ class CoreDataManager {
     }
     
     func fetchMemories(for user: User) -> [Memory] {
-        let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+        let request = Memory.fetchRequest()
         request.predicate = NSPredicate(format: "author == %@", user)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
         

@@ -191,10 +191,25 @@ struct MemoryCardView: View {
     }
     
     private func loadThumbnail() async -> UIImage? {
-        guard let _ = memory.firstPhoto() else { return nil }
+        guard let firstPhoto = memory.firstPhoto() else { return nil }
         
-        // Hier würde man in einer echten App die Photo-Loading-Logik implementieren
-        // Für jetzt geben wir nil zurück
+        // Versuche das Foto vom lokalen Pfad zu laden
+        if let image = firstPhoto.loadUIImage() {
+            // Erzeuge ein Thumbnail für bessere Performance
+            let thumbnailSize = CGSize(width: 64, height: 64)
+            let renderer = UIGraphicsImageRenderer(size: thumbnailSize)
+            let thumbnail = renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: thumbnailSize))
+            }
+            return thumbnail
+        }
+        
+        // Fallback: Lade Thumbnail falls vorhanden
+        if let thumbnail = firstPhoto.loadThumbnail() {
+            return thumbnail
+        }
+        
+        print("❌ MemoryCardView: Konnte kein Foto für Memory '\(memory.title ?? "Unknown")' laden")
         return nil
     }
 }
@@ -202,12 +217,6 @@ struct MemoryCardView: View {
 // MARK: - Memory Extensions für MemoryCardView
 
 extension Memory {
-    /// Gibt das erste Photo des Memory zurück, falls vorhanden
-    func firstPhoto() -> Photo? {
-        guard let photos = photos, photos.count > 0 else { return nil }
-        return photos.allObjects.first as? Photo
-    }
-    
     /// Prüft, ob das Memory Fotos hat
     var hasPhotos: Bool {
         guard let photos = photos else { return false }

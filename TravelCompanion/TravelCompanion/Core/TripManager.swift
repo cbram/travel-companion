@@ -16,12 +16,26 @@ class TripManager: ObservableObject {
     
     // MARK: - Private Properties
     private let coreDataManager = CoreDataManager.shared
+    private let userManager = UserManager.shared
     private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Computed Properties
+    var viewContext: NSManagedObjectContext {
+        return coreDataManager.viewContext
+    }
     
     // MARK: - Initialization
     private init() {
         setupNotifications()
-        loadInitialData()
+        
+        // Warte bis UserManager initialisiert ist
+        userManager.$currentUser
+            .sink { [weak self] user in
+                if user != nil {
+                    self?.loadInitialData()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Setup Methods
@@ -30,17 +44,18 @@ class TripManager: ObservableObject {
         NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
-                    self?.refreshTrips()
+                    self?.refreshTripsInternal()
                 }
             }
             .store(in: &cancellables)
     }
     
     private func loadInitialData() {
+        guard !isLoading else { return }
         isLoading = true
         
         DispatchQueue.main.async {
-            self.refreshTrips()
+            self.refreshTripsInternal()
             self.loadCurrentTrip()
             
             // Falls keine aktive Reise vorhanden, erstelle Default Trip
@@ -56,6 +71,11 @@ class TripManager: ObservableObject {
     
     /// Erstellt eine neue Reise
     func createTrip(title: String, description: String? = nil, startDate: Date = Date()) -> Trip? {
+        guard let currentUser = getCurrentUser() else {
+            print("❌ TripManager: Kein aktueller User verfügbar")
+            return nil
+        }
+        
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             print("❌ TripManager: Trip-Titel darf nicht leer sein")
             return nil
@@ -65,7 +85,7 @@ class TripManager: ObservableObject {
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             description: description?.trimmingCharacters(in: .whitespacesAndNewlines),
             startDate: startDate,
-            owner: getCurrentUser()
+            owner: currentUser
         )
         
         guard coreDataManager.save() else {
@@ -74,7 +94,7 @@ class TripManager: ObservableObject {
         }
         
         print("✅ TripManager: Neue Reise erstellt: \(title)")
-        refreshTrips()
+        refreshTripsInternal()
         
         return trip
     }
@@ -96,8 +116,9 @@ class TripManager: ObservableObject {
         print("✅ TripManager: Aktive Reise geändert zu: \(trip.title ?? "Unbekannt")")
         
         // LocationManager über Änderung informieren
-        let user = getCurrentUser()
-        LocationManager.shared.startTracking(for: trip, user: user)
+        if let user = getCurrentUser() {
+            LocationManager.shared.startTracking(for: trip, user: user)
+        }
     }
     
     /// Holt alle Reisen des aktuellen Users
@@ -117,7 +138,7 @@ class TripManager: ObservableObject {
             }
         }
         
-        coreDataManager.viewContext.delete(trip)
+        coreDataManager.deleteObject(trip)
         
         guard coreDataManager.save() else {
             print("❌ TripManager: Fehler beim Löschen der Reise")
@@ -125,7 +146,7 @@ class TripManager: ObservableObject {
         }
         
         print("✅ TripManager: Reise gelöscht: \(trip.title ?? "Unbekannt")")
-        refreshTrips()
+        refreshTripsInternal()
     }
     
     /// Beendet die aktuelle Reise
@@ -146,51 +167,41 @@ class TripManager: ObservableObject {
         LocationManager.shared.stopTracking()
         
         currentTrip = nil
-        refreshTrips()
+        refreshTripsInternal()
+    }
+    
+    /// Aktualisiert die Trip-Liste manuell
+    func refreshTrips() {
+        DispatchQueue.main.async {
+            self.refreshTripsInternal()
+        }
     }
     
     // MARK: - Private Helper Methods
     
-    private func refreshTrips() {
-        let user = getCurrentUser()
-        allTrips = coreDataManager.fetchTrips(for: user)
-            .sorted { $0.createdAt ?? Date.distantPast > $1.createdAt ?? Date.distantPast }
+    private func refreshTripsInternal() {
+        guard let user = getCurrentUser() else {
+            allTrips = []
+            return
+        }
+        
+        allTrips = Trip.fetchAllTrips(for: user, in: viewContext)
     }
     
     private func loadCurrentTrip() {
-        let user = getCurrentUser()
-        currentTrip = coreDataManager.fetchActiveTrip(for: user)
-    }
-    
-    private func getCurrentUser() -> User {
-        // Holt oder erstellt den aktuellen User
-        let request: NSFetchRequest<User> = User.fetchRequest()
-        request.fetchLimit = 1
-        
-        do {
-            let users = try coreDataManager.viewContext.fetch(request)
-            if let user = users.first {
-                return user
-            }
-        } catch {
-            print("❌ TripManager: Fehler beim Laden des Users: \(error)")
+        guard let user = getCurrentUser() else {
+            currentTrip = nil
+            return
         }
         
-        // Erstelle neuen Default User
-        return createDefaultUser()
+        let activeTrips = Trip.fetchActiveTrips(in: viewContext)
+        // Filter active trips for current user since fetchActiveTrips doesn't take user parameter
+        let userActiveTrips = activeTrips.filter { $0.owner == user }
+        currentTrip = userActiveTrips.first
     }
     
-    private func createDefaultUser() -> User {
-        let user = coreDataManager.createUser(
-            email: "user@travelcompanion.app",
-            displayName: "Reisender"
-        )
-        
-        guard coreDataManager.save() else {
-            fatalError("Konnte Default User nicht erstellen")
-        }
-        
-        return user
+    private func getCurrentUser() -> User? {
+        return userManager.currentUser
     }
     
     private func createDefaultTripIfNeeded() {

@@ -1,0 +1,152 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/TimelineView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Fehler",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 115
+        }
+      },
+      {
+        "comment": "",
+        "key": "Alle Reisen",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aktualisieren",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 107
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 116
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keine aktive Reise",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 206
+        }
+      },
+      {
+        "comment": "",
+        "key": "Wählen Sie eine Reise aus oder erstellen Sie eine neue, um Ihre Memories zu sehen.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 210
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erste Reise erstellen",
+        "location": {
+          "startingColumn": 45,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erste Reise aktivieren",
+        "location": {
+          "startingColumn": 71,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "Noch keine Memories",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 246
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erstellen Sie Ihr erstes Memory für '%@' und dokumentieren Sie Ihre Abenteuer.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 250
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erstes Memory erstellen",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 262
+        }
+      },
+      {
+        "comment": "",
+        "key": "Memories (%lld)",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 333
+        }
+      },
+      {
+        "comment": "",
+        "key": "AKTIV",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 288
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 308
+        }
+      },
+      {
+        "comment": "",
+        "key": "Memories",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 311
+        }
+      },
+      {
+        "comment": "",
+        "key": "Dauer",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 320
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lade Memories...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 339
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld/%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 476
+        }
+      }
+    ]
+  },
+  "version": 1
+}

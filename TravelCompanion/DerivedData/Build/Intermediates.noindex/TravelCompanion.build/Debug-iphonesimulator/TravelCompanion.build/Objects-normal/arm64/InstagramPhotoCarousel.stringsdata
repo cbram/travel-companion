@@ -1,0 +1,40 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/InstagramPhotoCarousel.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Lädt...",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 103
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fehler beim Laden",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 119
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld von %lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 253
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fehler beim Laden des Fotos",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 338
+        }
+      }
+    ]
+  },
+  "version": 1
+}

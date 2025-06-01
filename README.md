@@ -2,6 +2,21 @@
 
 Eine iOS Reise-App mit robustem Core Data Foundation und intelligenten GPS-Tracking für das MVP.
 
+## 🚀 **RECENT FIXES** ✅ 
+
+### Problem behoben: Kamera-Crash
+- ✅ **NSCameraUsageDescription** hinzugefügt - Kamera-Berechtigung 
+- ✅ **NSPhotoLibraryUsageDescription** hinzugefügt - Foto-Bibliothek-Berechtigung
+- ✅ **Verbesserte Fehlerbehandlung** mit Weiterleitung zu iOS-Einstellungen
+- ✅ **Production-ready PhotoPicker** mit Settings-Integration
+
+### Problem behoben: LocationManager Authorization
+- ✅ **NSLocationAlwaysAndWhenInUseUsageDescription** hinzugefügt
+- ✅ **NSLocationWhenInUseUsageDescription** hinzugefügt  
+- ✅ **NSLocationAlwaysUsageDescription** hinzugefügt
+- ✅ **LocationManager beim App-Start initialisiert** mit automatischer Berechtigung-Anforderung
+- ✅ **Verbesserte Alert-Funktionalität** für Einstellungen-Weiterleitung
+
 ## 🏗️ Architektur
 
 ### Core Data Stack
@@ -387,6 +402,9 @@ struct ContentView: View {
 
 <key>NSLocationWhenInUseUsageDescription</key>
 <string>TravelCompanion verwendet Ihren Standort für die Reise-Dokumentation.</string>
+
+<key>NSLocationAlwaysUsageDescription</key>
+<string>TravelCompanion benötigt Standortzugriff für GPS-Tracking Ihrer Reisen.</string>
 
 <key>UIBackgroundModes</key>
 <array>

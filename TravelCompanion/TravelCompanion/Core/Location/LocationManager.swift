@@ -94,8 +94,13 @@ class LocationManager: NSObject, ObservableObject {
     private func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.allowsBackgroundLocationUpdates = false
+        locationManager.distanceFilter = 10
         authorizationStatus = locationManager.authorizationStatus
+        
+        // Request initial location if authorized
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            locationManager.requestLocation() // Sofortiger Location-Abruf
+        }
     }
     
     private func setupBatteryMonitoring() {
@@ -148,6 +153,15 @@ class LocationManager: NSObject, ObservableObject {
         isTracking = true
         isPaused = false
         
+        // Background Location Updates für kontinuierliches Tracking
+        if UIApplication.shared.backgroundRefreshStatus == .available {
+            locationManager.allowsBackgroundLocationUpdates = true
+            locationManager.pausesLocationUpdatesAutomatically = false
+            print("✅ LocationManager: Background Location Updates aktiviert")
+        } else {
+            print("⚠️ LocationManager: Background App Refresh nicht verfügbar")
+        }
+        
         updateLocationManagerSettings()
         locationManager.startUpdatingLocation()
         
@@ -167,6 +181,12 @@ class LocationManager: NSObject, ObservableObject {
         
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
+        
+        // Background Location Updates deaktivieren
+        if locationManager.allowsBackgroundLocationUpdates {
+            locationManager.allowsBackgroundLocationUpdates = false
+            print("✅ LocationManager: Background Location Updates deaktiviert")
+        }
         
         pauseTimer?.invalidate()
         pauseTimer = nil
@@ -397,14 +417,37 @@ class LocationManager: NSObject, ObservableObject {
     // MARK: - Battery Monitoring
     
     @objc private func batteryLevelChanged() {
-        if batteryOptimizationEnabled && isTracking {
-            applyBatteryOptimization()
+        let batteryLevel = UIDevice.current.batteryLevel
+        
+        if batteryLevel < 0.2 && batteryOptimizationEnabled {
+            // Bei niedriger Batterie auf Energiesparmodus umschalten
+            setTrackingAccuracy(.low)
+            DebugLogger.shared.log("🔋 Niedrige Batterie - Energiesparmodus aktiviert")
+        } else if batteryLevel > 0.5 && trackingAccuracy == .low {
+            // Bei ausreichender Batterie wieder normale Genauigkeit
+            setTrackingAccuracy(.balanced)
+            DebugLogger.shared.log("🔋 Batterie ausreichend - normale Genauigkeit wiederhergestellt")
         }
     }
     
     @objc private func batteryStateChanged() {
-        if batteryOptimizationEnabled && isTracking {
-            applyBatteryOptimization()
+        let batteryState = UIDevice.current.batteryState
+        
+        switch batteryState {
+        case .charging, .full:
+            // Bei Laden kann höhere Genauigkeit verwendet werden
+            if trackingAccuracy == .low {
+                setTrackingAccuracy(.balanced)
+                DebugLogger.shared.log("🔌 Gerät lädt - höhere Tracking-Genauigkeit aktiviert")
+            }
+        case .unplugged:
+            // Beim Trennen vom Ladegerät Energiesparmodus prüfen
+            if UIDevice.current.batteryLevel < 0.3 {
+                setTrackingAccuracy(.low)
+                DebugLogger.shared.log("🔋 Ladegerät getrennt + niedrige Batterie - Energiesparmodus")
+            }
+        default:
+            break
         }
     }
     
@@ -496,7 +539,30 @@ class LocationManager: NSObject, ObservableObject {
     }
     
     private func showLocationSettingsAlert() {
-        // Diese Methode sollte in der UI-Schicht implementiert werden
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first else {
+                print("❌ LocationManager: Konnte kein Window für Alert finden")
+                return
+            }
+            
+            let alert = UIAlertController(
+                title: "Standort-Berechtigung erforderlich",
+                message: "TravelCompanion benötigt Zugriff auf Ihren Standort für GPS-Tracking. Bitte aktivieren Sie die Berechtigung in den Einstellungen.",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Einstellungen", style: .default) { _ in
+                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsUrl)
+                }
+            })
+            
+            alert.addAction(UIAlertAction(title: "Abbrechen", style: .cancel))
+            
+            window.rootViewController?.present(alert, animated: true)
+        }
+        
         print("⚠️ LocationManager: Benutzer sollte zu den Einstellungen weitergeleitet werden")
     }
     
@@ -506,6 +572,245 @@ class LocationManager: NSObject, ObservableObject {
         NotificationCenter.default.removeObserver(self)
         pauseTimer?.invalidate()
     }
+    
+    // MARK: - Location Request Helper
+    
+    /// Fordert eine einmalige Standortabfrage an
+    func requestCurrentLocation() {
+        guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways else {
+            requestPermission()
+            return
+        }
+        
+        locationManager.requestLocation()
+        print("📍 LocationManager: Standort-Abfrage gestartet")
+    }
+    
+    // MARK: - Background Processing Methods
+    
+    /// Verarbeitet Location Updates im Background
+    func processBackgroundLocationUpdates() async {
+        DebugLogger.shared.log("🔄 Background Location Updates werden verarbeitet")
+        
+        guard isTracking, let currentLocation = currentLocation else {
+            DebugLogger.shared.log("⚠️ Kein aktives Tracking oder keine Location für Background Processing")
+            return
+        }
+        
+        // Prüfe ob neue Location signifikant ist
+        if let lastLocation = lastSignificantLocation {
+            let distance = currentLocation.distance(from: lastLocation)
+            if distance < minimumDistanceForUpdate {
+                DebugLogger.shared.log("📍 Location Change zu gering für Update: \(distance)m")
+                return
+            }
+        }
+        
+        // Speichere aktuelle Location als letzte signifikante Location
+        lastSignificantLocation = currentLocation
+        
+        // Update Location in Context von aktivem Trip
+        await updateTripLocation(currentLocation)
+        
+        DebugLogger.shared.log("✅ Background Location Update verarbeitet")
+    }
+    
+    /// Erstellt automatisch Memories bei signifikanten Location Changes
+    func createPendingMemories() async {
+        DebugLogger.shared.log("🔄 Erstelle Pending Memories")
+        
+        guard isTracking,
+              let currentLocation = currentLocation,
+              let activeTrip = activeTrip,
+              let currentUser = currentUser else {
+            return
+        }
+        
+        // Prüfe ob Location alt genug ist für automatische Memory-Erstellung
+        let locationAge = Date().timeIntervalSince(currentLocation.timestamp)
+        guard locationAge < maximumLocationAge else {
+            DebugLogger.shared.log("⚠️ Location zu alt für Memory-Erstellung: \(locationAge)s")
+            return
+        }
+        
+        // Erstelle automatische Memory für signifikante Location
+        let pendingMemory = PendingMemory(
+            title: "Standort Update",
+            content: "Automatisch erfasster Standort während der Reise",
+            latitude: currentLocation.coordinate.latitude,
+            longitude: currentLocation.coordinate.longitude,
+            timestamp: currentLocation.timestamp,
+            tripID: activeTrip.id!,
+            userID: currentUser.id!
+        )
+        
+        // Zur Queue hinzufügen
+        await MainActor.run {
+            pendingMemories.append(pendingMemory)
+            savePendingMemories()
+        }
+        
+        DebugLogger.shared.log("✅ Pending Memory erstellt")
+    }
+    
+    /// Aktualisiert Trip Location im Background
+    private func updateTripLocation(_ location: CLLocation) async {
+        let context = coreDataManager.persistentContainer.newBackgroundContext()
+        
+        await context.perform {
+            do {
+                guard let activeTrip = self.activeTrip else { return }
+                
+                // Trip im Background Context finden
+                let tripRequest: NSFetchRequest<Trip> = Trip.fetchRequest()
+                tripRequest.predicate = NSPredicate(format: "id == %@", activeTrip.id! as CVarArg)
+                
+                guard try context.fetch(tripRequest).first != nil else {
+                    DebugLogger.shared.log("⚠️ Aktiver Trip nicht im Background Context gefunden")
+                    return
+                }
+                
+                // Aktualisiere Trip mit neuer Location (falls ein lastLocation Feld existiert)
+                // trip.lastLatitude = location.coordinate.latitude
+                // trip.lastLongitude = location.coordinate.longitude
+                // trip.lastLocationUpdate = location.timestamp
+                
+                try context.save()
+                DebugLogger.shared.log("✅ Trip Location im Background aktualisiert")
+                
+            } catch {
+                DebugLogger.shared.log("❌ Background Trip Location Update Fehler: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    /// Überprüft den aktuellen Permission Status
+    func checkPermissionStatus() {
+        let currentStatus = locationManager.authorizationStatus
+        
+        if currentStatus != authorizationStatus {
+            DispatchQueue.main.async {
+                self.authorizationStatus = currentStatus
+            }
+        }
+        
+        DebugLogger.shared.log("📍 Permission Status Check: \(currentStatus.description)")
+        
+        // Warnungen für problematische Zustände
+        switch currentStatus {
+        case .denied, .restricted:
+            DebugLogger.shared.log("⚠️ Location Permission Problem - Tracking nicht möglich")
+            if isTracking {
+                stopTracking()
+            }
+        case .authorizedWhenInUse:
+            if isTracking {
+                DebugLogger.shared.log("⚠️ Nur Foreground Location Permission - Background Tracking limitiert")
+            }
+        default:
+            break
+        }
+    }
+    
+    // MARK: - App State Change Handlers
+    
+    func handleAppStateChange(_ state: AppStateManager.AppState) {
+        switch state {
+        case .inactive:
+            // Location Updates pausieren wenn möglich
+            if !isTracking { return }
+            DebugLogger.shared.log("📱 App inaktiv - Location Updates fortsetzen")
+            
+        case .background:
+            // Auf significant location changes umschalten für Batterie-Optimierung
+            enableBackgroundLocationOptimization()
+            
+        case .active:
+            // Normale Location Updates aktivieren
+            disableBackgroundLocationOptimization()
+            
+        case .terminating:
+            // Final location save
+            saveFinalLocation()
+            
+        default:
+            break
+        }
+    }
+    
+    private func enableBackgroundLocationOptimization() {
+        guard isTracking else { return }
+        
+        // Auf significant location changes umschalten
+        locationManager.stopUpdatingLocation()
+        locationManager.startMonitoringSignificantLocationChanges()
+        
+        DebugLogger.shared.log("🔋 Background Location Optimization aktiviert")
+    }
+    
+    private func disableBackgroundLocationOptimization() {
+        guard isTracking else { return }
+        
+        // Normale Location Updates wieder aktivieren
+        locationManager.stopMonitoringSignificantLocationChanges()
+        locationManager.startUpdatingLocation()
+        
+        DebugLogger.shared.log("📍 Normale Location Updates aktiviert")
+    }
+    
+    private func saveFinalLocation() {
+        guard let currentLocation = currentLocation else { return }
+        
+        // Finale Location in UserDefaults speichern für nächsten App-Start
+        let locationData = [
+            "latitude": currentLocation.coordinate.latitude,
+            "longitude": currentLocation.coordinate.longitude,
+            "timestamp": currentLocation.timestamp.timeIntervalSince1970
+        ]
+        
+        UserDefaults.standard.set(locationData, forKey: "lastKnownLocation")
+        DebugLogger.shared.log("📍 Finale Location gespeichert")
+    }
+    
+    func prepareForMemoryWarning() {
+        // Location Cache leeren
+        lastSignificantLocation = nil
+        
+        // Nur die neuesten pending memories behalten
+        if pendingMemories.count > 10 {
+            pendingMemories = Array(pendingMemories.suffix(10))
+            savePendingMemories()
+        }
+        
+        DebugLogger.shared.log("🧹 LocationManager Memory Warning Cleanup")
+    }
+    
+    // MARK: - Location Restoration
+    
+    /// Lädt die letzte bekannte Location beim App-Start
+    func restoreLastKnownLocation() {
+        guard let locationData = UserDefaults.standard.dictionary(forKey: "lastKnownLocation"),
+              let latitude = locationData["latitude"] as? Double,
+              let longitude = locationData["longitude"] as? Double,
+              let timestamp = locationData["timestamp"] as? TimeInterval else {
+            DebugLogger.shared.log("📍 Keine gespeicherte Location zum Wiederherstellen gefunden")
+            return
+        }
+        
+        let restoredLocation = CLLocation(
+            coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+            altitude: 0,
+            horizontalAccuracy: 1000, // Große Unsicherheit da gespeicherte Location
+            verticalAccuracy: -1,
+            timestamp: Date(timeIntervalSince1970: timestamp)
+        )
+        
+        DispatchQueue.main.async {
+            self.currentLocation = restoredLocation
+        }
+        
+        DebugLogger.shared.log("📍 Letzte bekannte Location wiederhergestellt")
+    }
 }
 
 // MARK: - CLLocationManagerDelegate
@@ -513,7 +818,17 @@ class LocationManager: NSObject, ObservableObject {
 extension LocationManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        handleLocationUpdate(location)
+        
+        // Update current location immediately
+        DispatchQueue.main.async {
+            self.currentLocation = location
+            print("✅ LocationManager: Location aktualisiert - \(location.formattedCoordinates), Genauigkeit: \(location.horizontalAccuracy)m")
+        }
+        
+        // Handle location for tracking if enabled
+        if isTracking {
+            handleLocationUpdate(location)
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -524,19 +839,23 @@ extension LocationManager: CLLocationManagerDelegate {
             switch clError.code {
             case .denied:
                 print("❌ LocationManager: Location access denied")
-                stopTracking()
+                if isTracking {
+                    stopTracking()
+                }
             case .locationUnknown:
-                print("⚠️ LocationManager: Location unknown - continuing...")
+                print("⚠️ LocationManager: Location unknown - will continue trying...")
             case .network:
-                print("⚠️ LocationManager: Network error - continuing...")
+                print("⚠️ LocationManager: Network error - will retry...")
             default:
-                print("⚠️ LocationManager: Other location error - continuing...")
+                print("⚠️ LocationManager: Other location error (\(clError.code.rawValue)) - continuing...")
             }
         }
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        authorizationStatus = manager.authorizationStatus
+        DispatchQueue.main.async {
+            self.authorizationStatus = manager.authorizationStatus
+        }
         
         switch authorizationStatus {
         case .notDetermined:
@@ -548,8 +867,12 @@ extension LocationManager: CLLocationManagerDelegate {
             }
         case .authorizedWhenInUse:
             print("⚠️ LocationManager: Only foreground location access - request always authorization for tracking")
+            // Request initial location when permission granted
+            locationManager.requestLocation()
         case .authorizedAlways:
             print("✅ LocationManager: Full location access granted")
+            // Request initial location when permission granted
+            locationManager.requestLocation()
         @unknown default:
             print("❓ LocationManager: Unknown authorization status")
         }

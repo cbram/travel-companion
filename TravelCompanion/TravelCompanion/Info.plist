@@ -2,9 +2,132 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Location Services Berechtigungen -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>TravelCompanion benötigt Standortzugriff für GPS-Tracking Ihrer Reisen und zum automatischen Erstellen von Erinnerungen an besuchten Orten, auch im Hintergrund.</string>
+	
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TravelCompanion verwendet Ihren Standort für die Reise-Dokumentation und zum Erstellen von ortsbasierten Erinnerungen.</string>
+	
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>TravelCompanion benötigt dauerhaften Standortzugriff für kontinuierliches GPS-Tracking Ihrer Reisen, auch im Hintergrund.</string>
+	
+	<!-- Kamera Berechtigung -->
+	<key>NSCameraUsageDescription</key>
+	<string>TravelCompanion benötigt Zugriff auf die Kamera, um Fotos für Ihre Reise-Erinnerungen aufzunehmen.</string>
+	
+	<!-- Photo Library Berechtigung -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TravelCompanion benötigt Zugriff auf Ihre Foto-Mediathek, um Bilder zu Ihren Reise-Erinnerungen hinzuzufügen.</string>
+	
+	<!-- Photo Library Add Only Berechtigung (iOS 11+) -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>TravelCompanion möchte Fotos zu Ihrer Foto-Mediathek hinzufügen, um Ihre Reise-Erinnerungen zu sichern.</string>
+	
+	<!-- Background Modes für umfassenden Offline-Support -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
+		<string>background-app-refresh</string>
+		<string>background-processing</string>
+		<string>background-fetch</string>
+	</array>
+	
+	<!-- Background Task Identifiers -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.travelcompanion.location-sync</string>
+		<string>com.travelcompanion.data-processing</string>
+	</array>
+	
+	<!-- App Name für bessere UX -->
+	<key>CFBundleDisplayName</key>
+	<string>TravelCompanion</string>
+	
+	<!-- App Transport Security für lokale Development -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	
+	<!-- Core Data Model Configuration -->
+	<key>NSPersistentStoreFileProtectionKey</key>
+	<string>NSFileProtectionCompleteUntilFirstUserAuthentication</string>
+	
+	<!-- File System Konfiguration -->
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>UIFileSharingEnabled</key>
+	<false/>
+	
+	<!-- Performance Optimierungen -->
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	
+	<!-- Status Bar Configuration -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	
+	<!-- Interface Orientations -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	
+	<!-- Scene Configuration für iOS 13+ -->
+	<key>UISceneDelegate</key>
+	<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+	
+	<!-- App Capabilities -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+		<string>gps</string>
+		<string>location-services</string>
+	</array>
+	
+	<!-- Minimum iOS Version -->
+	<key>LSMinimumSystemVersion</key>
+	<string>15.0</string>
+	
+	<!-- Development Support -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	
+	<!-- Privacy Manifest -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryLocation</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>NSPrivacyAccessedAPITypeReasonTrackingUserLocation</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>NSPrivacyAccessedAPITypeReasonDataManagement</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

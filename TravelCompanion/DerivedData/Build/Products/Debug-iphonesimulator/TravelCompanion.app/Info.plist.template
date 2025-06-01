@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 📍 LOCATION PERMISSIONS - ERFORDERLICH für GPS-Tracking -->
+    
+    <!-- Berechtigung für Standortzugriff bei aktiver App-Nutzung -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>TravelCompanion verwendet Ihren Standort, um Ihre Reisen zu dokumentieren und interessante Orte als Footsteps zu speichern.</string>
+    
+    <!-- Berechtigung für Standortzugriff auch im Hintergrund -->
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>TravelCompanion benötigt kontinuierlichen Standortzugriff, um Ihre Reise automatisch zu verfolgen, auch wenn die App im Hintergrund läuft. So werden alle wichtigen Momente Ihrer Reise erfasst.</string>
+    
+    <!-- Zusätzliche Berechtigung für iOS 11+ -->
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>TravelCompanion verfolgt Ihre Reise kontinuierlich im Hintergrund, um eine vollständige Dokumentation Ihrer Abenteuer zu erstellen.</string>
+    
+    <!-- 🔔 NOTIFICATIONS - Für Tracking-Status Updates -->
+    
+    <!-- Local Notifications für GPS-Status -->
+    <key>NSUserNotificationUsageDescription</key>
+    <string>TravelCompanion sendet Ihnen Benachrichtigungen über den Status Ihres GPS-Trackings und wichtige Reise-Meilensteine.</string>
+    
+    <!-- 📱 BACKGROUND MODES - KRITISCH für kontinuierliches GPS-Tracking -->
+    
+    <key>UIBackgroundModes</key>
+    <array>
+        <!-- Ermöglicht Location Updates auch wenn App im Hintergrund -->
+        <string>location</string>
+        
+        <!-- Für Background App Refresh (optional, aber empfohlen) -->
+        <string>background-processing</string>
+        
+        <!-- Für Background Fetch (optional) -->
+        <string>fetch</string>
+    </array>
+    
+    <!-- 🔋 BATTERY OPTIMIZATION - Hinweise für User -->
+    
+    <!-- Warnt iOS vor potentiell hohem Batterieverbrauch -->
+    <key>UIBackgroundLocationIndicator</key>
+    <true/>
+    
+    <!-- 📷 CAMERA & PHOTOS - Für Footstep-Photos (optional) -->
+    
+    <!-- Kamera-Zugriff für Footstep-Fotos -->
+    <key>NSCameraUsageDescription</key>
+    <string>TravelCompanion möchte Fotos aufnehmen, um Ihre Reise-Erinnerungen zu vervollständigen.</string>
+    
+    <!-- Photo Library Zugriff -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>TravelCompanion benötigt Zugriff auf Ihre Fotobibliothek, um Fotos zu Ihren Footsteps hinzuzufügen.</string>
+    
+    <!-- 🌐 NETWORK - Für CloudKit Sync (optional) -->
+    
+    <!-- Network-Zugriff für Daten-Synchronisation -->
+    <key>NSNetworkUsageDescription</key>
+    <string>TravelCompanion synchronisiert Ihre Reisedaten sicher über iCloud, um sie auf all Ihren Geräten verfügbar zu machen.</string>
+    
+    <!-- 📱 APP CONFIGURATION -->
+    
+    <!-- Bundle Identifier (Beispiel) -->
+    <key>CFBundleIdentifier</key>
+    <string>com.yourcompany.travelcompanion</string>
+    
+    <!-- App Name -->
+    <key>CFBundleDisplayName</key>
+    <string>TravelCompanion</string>
+    
+    <!-- Version -->
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    
+    <!-- Build Number -->
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    
+    <!-- Minimum iOS Version -->
+    <key>LSMinimumSystemVersion</key>
+    <string>15.0</string>
+    
+    <!-- Unterstützte Device Orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    
+    <!-- iPad Orientations -->
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    
+    <!-- 🎨 UI CONFIGURATION -->
+    
+    <!-- Status Bar Style -->
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleDefault</string>
+    
+    <!-- Scene Configuration für iOS 13+ -->
+    <key>UISceneDelegate</key>
+    <dict>
+        <key>UISceneConfigurationName</key>
+        <string>Default Configuration</string>
+        <key>UISceneDelegateClassName</key>
+        <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+    </dict>
+    
+    <!-- 🔒 PRIVACY & SECURITY -->
+    
+    <!-- App Transport Security (für Development) -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- Erlaube HTTP für Development (NICHT für Production!) -->
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        
+        <!-- Localhost für Development -->
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>localhost</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+    
+    <!-- 📋 ADDITIONAL CAPABILITIES (bei Bedarf aktivieren) -->
+    
+    <!-- CloudKit Entitlements -->
+    <!-- Wird in Capabilities > CloudKit konfiguriert -->
+    
+    <!-- Core Data CloudKit -->
+    <!-- Automatisch durch Xcode konfiguriert -->
+    
+    <!-- Push Notifications -->
+    <!-- Wird in Capabilities > Push Notifications aktiviert -->
+    
+</dict>
+</plist>
+
+<!--
+
+📝 SETUP-ANLEITUNG FÜR XCODE:
+
+1. PROJECT CAPABILITIES:
+   - Gehe zu Project Settings > Signing & Capabilities
+   - Füge hinzu: "Background Modes"
+   - Aktiviere: "Location updates"
+   - Optional: "Background processing", "Background fetch"
+
+2. LOCATION PERMISSIONS:
+   - Kopiere die NSLocation* Einträge in deine Info.plist
+   - Passe die Beschreibungstexte an deine App an
+   - Verwende benutzerfreundliche, klare Erklärungen
+
+3. BACKGROUND MODES:
+   - UIBackgroundModes Array ist KRITISCH
+   - "location" ist erforderlich für kontinuierliches GPS
+   - Ohne diese Einträge funktioniert Background-Tracking nicht
+
+4. TESTING:
+   - Verwende physisches Device für echte GPS-Tests
+   - Simulator: Device > Location für Test-Koordinaten
+   - Battery optimization kann nur auf echtem Device getestet werden
+
+5. APP STORE REVIEW:
+   - Background location wird von Apple streng geprüft
+   - Erkläre klar, warum kontinuierliches GPS nötig ist
+   - Dokumentiere Batterie-Optimierungen
+   - Erwähne User-Kontrolle (Start/Stop Tracking)
+
+⚠️ WICHTIGE HINWEISE:
+
+- Background Location führt zu intensiverer App Store Review
+- User werden bei Install über Background-Tracking informiert
+- Batterieverbrauch kann hoch sein -> Optimierungen sind wichtig
+- GDPR/Privacy: Informiere User über Datensammlung
+- Test auf verschiedenen iOS-Versionen (Permissions können sich ändern)
+
+🔋 BATTERIE-OPTIMIERUNG TIPPS:
+
+1. Verwende die intelligente Genauigkeits-Anpassung des LocationManagers
+2. Implementiere Pause-Erkennung für Stillstand
+3. Nutze "Significant Location Changes" wenn möglich
+4. Biete User manuelle Kontrolle über Tracking-Genauigkeit
+5. Zeige Batterieverbrauch-Informationen in der App
+
+--> 

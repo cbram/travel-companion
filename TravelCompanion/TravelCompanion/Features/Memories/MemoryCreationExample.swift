@@ -226,14 +226,13 @@ struct TripDetailView: View {
 
 struct MemoryRowView: View {
     let memory: Memory
+    @State private var thumbnail: UIImage?
     
     var body: some View {
         HStack(spacing: 12) {
             // Photo thumbnail or placeholder
-            if let photo = memory.photos?.first as? Photo,
-               let localURL = photo.localURL,
-               let image = UIImage(contentsOfFile: localURL) {
-                Image(uiImage: image)
+            if let thumbnail = thumbnail {
+                Image(uiImage: thumbnail)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 60, height: 60)
@@ -279,10 +278,28 @@ struct MemoryRowView: View {
             
             Spacer()
         }
+        .onAppear {
+            loadThumbnail()
+        }
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+    
+    private func loadThumbnail() {
+        guard thumbnail == nil else { return }
+        
+        // Lade das erste Foto des Memory
+        if let firstPhoto = memory.firstPhoto(),
+           let image = firstPhoto.loadUIImage() {
+            // Erstelle ein Thumbnail für bessere Performance
+            let thumbnailSize = CGSize(width: 60, height: 60)
+            let renderer = UIGraphicsImageRenderer(size: thumbnailSize)
+            self.thumbnail = renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: thumbnailSize))
+            }
+        }
     }
 }
 

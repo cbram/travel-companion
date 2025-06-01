@@ -312,21 +312,6 @@ struct GPSTestView: View {
     }
 }
 
-// MARK: - Extensions
-
-extension CLAuthorizationStatus {
-    var description: String {
-        switch self {
-        case .notDetermined: return "Nicht bestimmt"
-        case .restricted: return "Eingeschränkt"
-        case .denied: return "Verweigert"
-        case .authorizedAlways: return "Immer erlaubt"
-        case .authorizedWhenInUse: return "Bei Nutzung"
-        @unknown default: return "Unbekannt"
-        }
-    }
-}
-
 // MARK: - Simulator Location Setup Instructions
 
 /*

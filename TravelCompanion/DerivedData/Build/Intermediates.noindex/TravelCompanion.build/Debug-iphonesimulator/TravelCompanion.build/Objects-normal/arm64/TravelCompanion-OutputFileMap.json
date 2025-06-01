@@ -1,0 +1,408 @@
+{
+  "" : {
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion-master.dia",
+    "emit-module-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion-master-emit-module.dia",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion-master.swiftdeps"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/Memory+CoreDataClass.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/Memory+CoreDataProperties.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/Photo+CoreDataClass.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/Photo+CoreDataProperties.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/TravelCompanion+CoreDataModel.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanion+CoreDataModel~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/Trip+CoreDataClass.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/Trip+CoreDataProperties.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/User+CoreDataClass.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/CoreDataGenerated/TravelCompanion/User+CoreDataProperties.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/ContentView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/CoreDataManager.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/CoreDataManager~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/Models/Memory+Extensions.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Memory+Extensions~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/Models/Photo+Extensions.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Photo+Extensions~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/Models/Trip+Extensions.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/Trip+Extensions~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/Models/User+Extensions.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/User+Extensions~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/PersistenceController.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PersistenceController~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/CoreData/SampleDataCreator.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SampleDataCreator~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/Location/GPSTestScript.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/GPSTestScript~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/Location/LocationManager.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManager~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/Location/LocationManagerExample.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/LocationManagerExample~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/Location/MockLocationManager.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MockLocationManager~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/TripManager.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripManager~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Core/UserManager.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/UserManager~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/EnhancedMemoryCreationView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/EnhancedMemoryCreationViewModel.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EnhancedMemoryCreationViewModel~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/MemoryCardView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCardView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/MemoryCreationExample.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationExample~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/MemoryCreationView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/MemoryCreationViewModel.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/MemoryCreationViewModel~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Memories/PhotoPicker.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/PhotoPicker~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Profile/SettingsView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/SettingsView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/EmptyStateView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/EmptyStateView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/InstagramPhotoCarousel.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/InstagramPhotoCarousel~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/TimelineView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/TimelineViewModel.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TimelineViewModel~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Trips/TripCreationView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripCreationView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Trips/TripDetailView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripDetailView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Trips/TripsListView.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TripsListView~partial.swiftmodule"
+  },
+  "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/TravelCompanionApp.swift" : {
+    "const-values" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.swiftconstvalues",
+    "dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.d",
+    "diagnostics" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.dia",
+    "index-unit-output-path" : "/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.o",
+    "llvm-bc" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.bc",
+    "object" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.o",
+    "swift-dependencies" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp.swiftdeps",
+    "swiftmodule" : "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/DerivedData/Build/Intermediates.noindex/TravelCompanion.build/Debug-iphonesimulator/TravelCompanion.build/Objects-normal/arm64/TravelCompanionApp~partial.swiftmodule"
+  }
+}

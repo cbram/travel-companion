@@ -6,11 +6,13 @@ struct MemoryCreationView: View {
     @StateObject private var viewModel = MemoryCreationViewModel()
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var titleFieldFocused: Bool
+    @FocusState private var descriptionFieldFocused: Bool
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 20) {
+                LazyVStack(spacing: 20) {
                     // Header
                     headerSection
                     
@@ -48,11 +50,26 @@ struct MemoryCreationView: View {
                     }
                 }
             }
+            .dismissKeyboardOnTap()
+            .customKeyboardToolbar {
+                HStack {
+                    Spacer()
+                    Button("Fertig") {
+                        hideKeyboard()
+                    }
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+            }
             .sheet(isPresented: $viewModel.showingImagePicker) {
                 ImagePickerView(
                     sourceType: viewModel.imageSourceType,
                     selectedImage: $viewModel.selectedImage
                 )
+                .interactiveDismissDisabled(viewModel.isSaving)
             }
             .photosPicker(
                 isPresented: $viewModel.showingPhotoPicker,
@@ -72,18 +89,12 @@ struct MemoryCreationView: View {
                     dismiss()
                 }
             } message: {
-                Text("Erinnerung wurde erfolgreich gespeichert!")
+                Text("Memory wurde erfolgreich gespeichert!")
             }
             .alert("Keine aktive Reise", isPresented: $viewModel.showingNoTripAlert) {
-                Button("Zu den Reisen") {
-                    dismiss()
-                    // Hier könnte man zu TripsListView navigieren
-                }
-                Button("Abbrechen") {
-                    dismiss()
-                }
+                Button("OK") { }
             } message: {
-                Text("Bitte wählen Sie zuerst eine aktive Reise aus.")
+                Text("Bitte erstelle zuerst eine Reise oder setze eine Reise als aktiv.")
             }
         }
         .onAppear {
@@ -150,6 +161,10 @@ struct MemoryCreationView: View {
             TextField("Was hast du erlebt?", text: $viewModel.title)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .submitLabel(.next)
+                .focused($titleFieldFocused)
+                .onSubmit {
+                    descriptionFieldFocused = true
+                }
         }
     }
     
@@ -164,6 +179,11 @@ struct MemoryCreationView: View {
                      axis: .vertical)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .lineLimit(3...6)
+                .focused($descriptionFieldFocused)
+                .submitLabel(.done)
+                .onSubmit {
+                    hideKeyboard()
+                }
         }
     }
     
@@ -176,13 +196,13 @@ struct MemoryCreationView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     if let location = viewModel.currentLocation {
-                        Text("📍 \(location.coordinate.latitude, specifier: "%.6f"), \(location.coordinate.longitude, specifier: "%.6f")")
+                        Text("📍 \(location.formattedCoordinates)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
-                        Text("Genauigkeit: ±\(Int(location.horizontalAccuracy))m")
+                        Text("Genauigkeit: \(location.formattedAccuracy)")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(location.horizontalAccuracy >= 0 ? .secondary : .orange)
                     } else {
                         Text("GPS-Position wird ermittelt...")
                             .font(.caption)
@@ -193,70 +213,85 @@ struct MemoryCreationView: View {
                 Spacer()
                 
                 Button("Aktualisieren") {
-                    viewModel.updateLocation()
+                    if !viewModel.isUpdatingLocation {
+                        viewModel.updateLocation()
+                    }
                 }
                 .font(.caption)
                 .buttonStyle(.bordered)
+                .disabled(viewModel.isUpdatingLocation)
+                .overlay(
+                    Group {
+                        if viewModel.isUpdatingLocation {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        }
+                    }
+                )
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
         }
     }
     
     private var photoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Foto", systemImage: "photo")
+            Label("Foto", systemImage: "camera")
                 .font(.headline)
                 .foregroundColor(.primary)
             
-            // Ausgewähltes Foto anzeigen
-            if let image = viewModel.selectedImage {
-                selectedPhotoView(image: image)
-            }
-            
-            // Foto-Auswahl Buttons
-            photoSelectionButtons
-        }
-    }
-    
-    private func selectedPhotoView(image: UIImage) -> some View {
-        VStack(spacing: 12) {
-            Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(maxHeight: 200)
-                .clipped()
-                .cornerRadius(12)
-            
-            Button(action: {
-                viewModel.removeSelectedImage()
-            }) {
-                Label("Foto entfernen", systemImage: "trash")
+            if let selectedImage = viewModel.selectedImage {
+                // Selected Image Preview
+                VStack(spacing: 8) {
+                    Image(uiImage: selectedImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 200)
+                        .clipped()
+                        .cornerRadius(12)
+                    
+                    Button("Foto entfernen") {
+                        viewModel.removeSelectedImage()
+                    }
+                    .font(.caption)
                     .foregroundColor(.red)
+                }
+            } else {
+                // Photo Selection Buttons
+                HStack(spacing: 12) {
+                    Button(action: {
+                        viewModel.showCameraPicker()
+                    }) {
+                        VStack(spacing: 8) {
+                            Image(systemName: "camera.fill")
+                                .font(.title2)
+                            Text("Kamera")
+                                .font(.caption)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(12)
+                    }
+                    .disabled(!viewModel.isCameraAvailable)
+                    
+                    Button(action: {
+                        viewModel.showPhotoPicker()
+                    }) {
+                        VStack(spacing: 8) {
+                            Image(systemName: "photo.fill")
+                                .font(.title2)
+                            Text("Galerie")
+                                .font(.caption)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(12)
+                    }
+                }
             }
-            .buttonStyle(.bordered)
-        }
-    }
-    
-    private var photoSelectionButtons: some View {
-        HStack(spacing: 12) {
-            Button(action: {
-                viewModel.showCameraPicker()
-            }) {
-                Label("Kamera", systemImage: "camera.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .disabled(!viewModel.isCameraAvailable)
-            
-            Button(action: {
-                viewModel.showPhotoPicker()
-            }) {
-                Label("Galerie", systemImage: "photo.on.rectangle")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
         }
     }
     
@@ -270,28 +305,42 @@ struct MemoryCreationView: View {
                 if viewModel.isSaving {
                     ProgressView()
                         .scaleEffect(0.8)
-                    Text("Speichern...")
+                        .foregroundColor(.white)
                 } else {
-                    Image(systemName: "square.and.arrow.down")
-                    Text("Erinnerung speichern")
+                    Image(systemName: "checkmark.circle.fill")
                 }
+                Text(viewModel.isSaving ? "Speichert..." : "Memory speichern")
             }
+            .font(.headline)
+            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding()
             .background(viewModel.canSave ? Color.blue : Color.gray)
-            .foregroundColor(.white)
             .cornerRadius(12)
         }
         .disabled(!viewModel.canSave || viewModel.isSaving)
         .padding(.top)
     }
+    
+    // MARK: - Helper Methods
+    
+    private func hideKeyboard() {
+        titleFieldFocused = false
+        descriptionFieldFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 }
 
 // MARK: - Preview
-
 struct MemoryCreationView_Previews: PreviewProvider {
     static var previews: some View {
-        MemoryCreationView()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        // Create sample context with data for preview
+        let previewContext = PersistenceController.preview.container.viewContext
+        
+        // Ensure sample data exists
+        let _ = SampleDataCreator.createSampleData(in: previewContext)
+        
+        return MemoryCreationView()
+            .environment(\.managedObjectContext, previewContext)
     }
 } 

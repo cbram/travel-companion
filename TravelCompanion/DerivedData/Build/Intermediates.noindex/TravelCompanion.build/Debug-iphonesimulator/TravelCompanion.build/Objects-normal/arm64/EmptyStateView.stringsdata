@@ -1,0 +1,112 @@
+{
+  "source": "/Users/chbram/Documents/Arduino/TravelCompanion/TravelCompanion/TravelCompanion/Features/Timeline/EmptyStateView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Keine Ergebnisse",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Deine Timeline ist leer",
+        "location": {
+          "startingColumn": 52,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filter zurücksetzen",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "Neue Erinnerung erstellen",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erste Erinnerung erstellen",
+        "location": {
+          "startingColumn": 69,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keine Treffer für \"%@\"",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "Versuche andere Suchbegriffe oder erstelle eine neue Erinnerung.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 166
+        }
+      },
+      {
+        "comment": "",
+        "key": "Suche löschen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "Neue Erinnerung",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keine Erinnerungen für \"%@\"",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 202
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erstelle deine erste Erinnerung für diese Reise!",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 207
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erinnerung hinzufügen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 214
+        }
+      },
+      {
+        "comment": "",
+        "key": "Alle Reisen anzeigen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 219
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -276,8 +276,20 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
                     
                     // Set location
                     if let location = self.effectiveLocation {
-                        memory.latitude = location.coordinate.latitude
-                        memory.longitude = location.coordinate.longitude
+                        let lat = location.coordinate.latitude
+                        let lon = location.coordinate.longitude
+                        
+                        guard LocationValidator.isValidCoordinate(latitude: lat, longitude: lon) else {
+                            print("❌ EnhancedMemoryCreationViewModel: Ungültige Koordinaten - Lat: \(lat), Lon: \(lon)")
+                            throw EnhancedMemoryCreationError.locationNotAvailable
+                        }
+                        
+                        memory.latitude = lat
+                        memory.longitude = lon
+                    } else {
+                        print("⚠️ EnhancedMemoryCreationViewModel: Keine Location verfügbar, setze Standard-Koordinaten")
+                        memory.latitude = 0.0
+                        memory.longitude = 0.0
                     }
                     
                     try self.coreDataManager.backgroundContext.save()
@@ -342,20 +354,48 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
     // MARK: - Image Processing
     
     private func compressImageForStorage(_ image: UIImage) -> UIImage {
-        // Resize image if too large
-        let maxDimension: CGFloat = 1200
+        // Deutlich reduzierte maximale Größe für Mobile
+        let maxDimension: CGFloat = 800 // Von 1200 auf 800 reduziert
         let size = image.size
         
-        if max(size.width, size.height) > maxDimension {
-            let ratio = maxDimension / max(size.width, size.height)
+        // Validiere die ursprüngliche Bildgröße
+        guard size.width.isFinite && size.height.isFinite && 
+              size.width > 0 && size.height > 0 else {
+            print("⚠️ EnhancedMemoryCreationViewModel: Ungültige Bildgröße - Width: \(size.width), Height: \(size.height)")
+            return image
+        }
+        
+        let maxCurrentDimension = max(size.width, size.height)
+        guard maxCurrentDimension.isFinite && maxCurrentDimension > 0 else {
+            print("⚠️ EnhancedMemoryCreationViewModel: Ungültige maximale Dimension: \(maxCurrentDimension)")
+            return image
+        }
+        
+        if maxCurrentDimension > maxDimension {
+            let ratio = maxDimension / maxCurrentDimension
+            guard ratio.isFinite && ratio > 0 else {
+                print("⚠️ EnhancedMemoryCreationViewModel: Ungültiges Verhältnis: \(ratio)")
+                return image
+            }
+            
             let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
             
-            UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
+            // Validiere die neue Größe bevor CoreGraphics verwendet wird
+            guard newSize.width.isFinite && newSize.height.isFinite &&
+                  newSize.width > 0 && newSize.height > 0 else {
+                print("⚠️ EnhancedMemoryCreationViewModel: Ungültige neue Bildgröße - Width: \(newSize.width), Height: \(newSize.height)")
+                return image
+            }
             
-            return resizedImage ?? image
+            // Optimierte Renderer-Konfiguration für bessere Performance
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1.0 // Verhindere High-DPI Scaling
+            format.opaque = true // Bessere Performance für JPEG
+            
+            let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+            return renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: newSize))
+            }
         }
         
         return image
@@ -364,10 +404,13 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
     // MARK: - File Management
     
     private func saveImageToDocuments(image: UIImage, filename: String) throws -> String {
-        // Use higher compression for storage optimization
-        guard let imageData = image.jpegData(compressionQuality: 0.7) else {
-            throw MemoryCreationError.imageCompressionFailed
+        // Aggressivere Komprimierung für kleinere Dateien
+        guard let imageData = image.jpegData(compressionQuality: 0.4) else { // Von 0.7 auf 0.4 reduziert
+            throw EnhancedMemoryCreationError.imageCompressionFailed
         }
+        
+        let fileSizeKB = imageData.count / 1024
+        print("📷 EnhancedMemoryCreationViewModel: Bild komprimiert - \(fileSizeKB)KB")
         
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let imageURL = documentsPath.appendingPathComponent(filename)
