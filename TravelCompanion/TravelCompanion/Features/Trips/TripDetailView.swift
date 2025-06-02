@@ -173,14 +173,14 @@ struct TripManagementView: View {
                 
                 // Activate/End Trip Button
                 if isActiveTrip {
-                    ActionButton(
+                    TripActionButton(
                         title: "Reise beenden",
                         icon: "stop.circle.fill",
                         color: .red,
                         action: { showingEndTripAlert = true }
                     )
                 } else if trip.endDate == nil {
-                    ActionButton(
+                    TripActionButton(
                         title: "Aktivieren",
                         icon: "play.circle.fill",
                         color: .green,
@@ -189,7 +189,7 @@ struct TripManagementView: View {
                 }
                 
                 // Edit Trip Button
-                ActionButton(
+                TripActionButton(
                     title: "Bearbeiten",
                     icon: "pencil.circle.fill",
                     color: .blue,
@@ -300,7 +300,7 @@ struct TripManagementView: View {
 }
 
 // MARK: - Supporting Views
-struct ActionButton: View {
+struct TripActionButton: View {
     let title: String
     let icon: String
     let color: Color
@@ -491,20 +491,5 @@ struct TripManagementView_Previews: PreviewProvider {
         .environmentObject(TripManager.shared)
         .environmentObject(UserManager.shared)
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-    }
-}
-
-// Sample Data Extension for Preview
-extension SampleDataCreator {
-    static func createSampleTrip() -> Trip {
-        let context = PersistenceController.preview.container.viewContext
-        let trip = Trip(context: context)
-        trip.id = UUID()
-        trip.title = "Italien Rundreise"
-        trip.tripDescription = "Eine wunderbare Reise durch die Toskana und nach Rom"
-        trip.startDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
-        trip.isActive = true
-        trip.createdAt = Date()
-        return trip
     }
 } 

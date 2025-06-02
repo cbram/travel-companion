@@ -10,6 +10,10 @@ struct EnhancedMemoryCreationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     
+    // PERFORMANCE: State für UI-Updates reduzieren
+    @State private var isKeyboardVisible = false
+    @State private var isViewInitialized = false
+    
     let trip: Trip
     let user: User
     
@@ -21,24 +25,13 @@ struct EnhancedMemoryCreationView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                // Header Section
-                headerSection
-                
-                // Eingabe Sektion
-                inputSection
-                
-                // GPS & Location Sektion
-                locationSection
-                
-                // Photo Sektion
-                photoSection
-                
-                // Datum & Zeit Sektion
-                dateTimeSection
-                
-                // Save Button
-                saveSection
+            GeometryReader { geometry in
+                // PERFORMANCE: Conditional rendering für bessere Performance
+                if isViewInitialized {
+                    mainContentView(geometry: geometry)
+                } else {
+                    loadingView
+                }
             }
             .navigationTitle("Neue Erinnerung")
             .navigationBarTitleDisplayMode(.large)
@@ -84,64 +77,124 @@ struct EnhancedMemoryCreationView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
+            .onAppear {
+                setupView()
+            }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background {
-                    viewModel.saveDraft()
+                handleScenePhaseChange(phase)
+            }
+            // PERFORMANCE: Keyboard handling optimiert
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isKeyboardVisible = true
                 }
             }
-            .onAppear {
-                viewModel.loadDraft()
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isKeyboardVisible = false
+                }
             }
         }
     }
     
-    // MARK: - View Sections
+    // MARK: - View Components
     
-    private var headerSection: some View {
-        Section {
-            VStack(spacing: 12) {
-                Image(systemName: "camera.viewfinder")
-                    .font(.system(size: 40))
-                    .foregroundColor(.blue)
-                
-                VStack(spacing: 4) {
-                    Text("Neue Erinnerung")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    Text("für \(trip.title ?? "Unbekannte Reise")")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Status Indicators
-                HStack(spacing: 16) {
-                    statusIndicator(
-                        icon: "location.fill",
-                        label: "GPS",
-                        isActive: viewModel.hasValidLocation,
-                        color: viewModel.hasValidLocation ? .green : .orange
-                    )
-                    
-                    statusIndicator(
-                        icon: "photo.fill",
-                        label: "\(viewModel.selectedImages.count) Fotos",
-                        isActive: !viewModel.selectedImages.isEmpty,
-                        color: .blue
-                    )
-                    
-                    statusIndicator(
-                        icon: "wifi",
-                        label: viewModel.isOnline ? "Online" : "Offline",
-                        isActive: viewModel.isOnline,
-                        color: viewModel.isOnline ? .green : .orange
-                    )
-                }
+    private var loadingView: some View {
+        VStack {
+            ProgressView()
+            Text("Initialisierung...")
                 .font(.caption)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    @ViewBuilder
+    private func mainContentView(geometry: GeometryProxy) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                // Header Section - PERFORMANCE: Lazy Loading
+                headerSection
+                    .padding()
+                
+                Divider()
+                
+                VStack(spacing: 20) {
+                    // Eingabe Sektion
+                    inputSection
+                        .padding(.horizontal)
+                    
+                    // GPS & Location Sektion - Conditional rendering
+                    if viewModel.hasValidLocation || viewModel.isUpdatingLocation {
+                        locationSection
+                            .padding(.horizontal)
+                    }
+                    
+                    // Photo Sektion
+                    photoSection
+                        .padding(.horizontal)
+                    
+                    // Datum & Zeit Sektion
+                    dateTimeSection
+                        .padding(.horizontal)
+                    
+                    // Save Button
+                    saveSection
+                        .padding(.horizontal)
+                        .padding(.bottom, isKeyboardVisible ? 0 : geometry.safeAreaInsets.bottom)
+                }
+                .padding(.vertical)
+            }
+        }
+        // PERFORMANCE: Optimierte Scroll-Indikatoren
+        .scrollIndicators(.automatic)
+        .scrollDismissesKeyboard(.immediately)
+    }
+
+    // MARK: - View Sections
+
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "camera.viewfinder")
+                .font(.system(size: 40))
+                .foregroundColor(.blue)
+            
+            VStack(spacing: 4) {
+                Text("Neue Erinnerung")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
+                Text("für \(trip.title ?? "Unbekannte Reise")")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            // Status Indicators - PERFORMANCE: Conditional rendering
+            HStack(spacing: 16) {
+                statusIndicator(
+                    icon: "location.fill",
+                    label: "GPS",
+                    isActive: viewModel.hasValidLocation,
+                    color: viewModel.hasValidLocation ? .green : .orange
+                )
+                
+                statusIndicator(
+                    icon: "photo.fill",
+                    label: "\(viewModel.selectedImages.count) Fotos",
+                    isActive: !viewModel.selectedImages.isEmpty,
+                    color: .blue
+                )
+                
+                statusIndicator(
+                    icon: "wifi",
+                    label: viewModel.isOnline ? "Online" : "Offline",
+                    isActive: viewModel.isOnline,
+                    color: viewModel.isOnline ? .green : .orange
+                )
+            }
+            .font(.caption)
+        }
+        .frame(maxWidth: .infinity)
     }
     
     private func statusIndicator(icon: String, label: String, isActive: Bool, color: Color) -> some View {
@@ -155,8 +208,8 @@ struct EnhancedMemoryCreationView: View {
     }
     
     private var inputSection: some View {
-        Section("Details") {
-            // Titel (Required)
+        VStack(spacing: 16) {
+            // Titel (Required) - PERFORMANCE: Optimierte TextField
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Label("Titel", systemImage: "textformat")
@@ -169,9 +222,11 @@ struct EnhancedMemoryCreationView: View {
                 TextField("Was hast du erlebt?", text: $viewModel.title)
                     .textFieldStyle(.roundedBorder)
                     .submitLabel(.next)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.sentences)
             }
             
-            // Beschreibung (Optional)
+            // Beschreibung (Optional) - PERFORMANCE: Lazy rendering
             VStack(alignment: .leading, spacing: 8) {
                 Label("Beschreibung", systemImage: "text.alignleft")
                 
@@ -180,49 +235,65 @@ struct EnhancedMemoryCreationView: View {
                          axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(3...8)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.sentences)
             }
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
     
     private var locationSection: some View {
-        Section("Standort") {
-            VStack(alignment: .leading, spacing: 12) {
-                // Current Location Display
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Standort", systemImage: "location")
+                .font(.headline)
+                .padding(.bottom, 4)
+            
+            // Current Location Display - PERFORMANCE: Conditional rendering
+            Group {
                 if let location = viewModel.effectiveLocation {
                     locationDisplayCard(location: location)
                 } else {
                     noLocationCard
                 }
-                
-                // Location Actions
-                HStack(spacing: 12) {
-                    Button(action: {
-                        viewModel.updateLocation()
-                    }) {
-                        Label("GPS aktualisieren", systemImage: "location.circle")
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(viewModel.isUpdatingLocation)
-                    
-                    Button(action: {
-                        viewModel.showingLocationPicker = true
-                    }) {
-                        Label("Manuell wählen", systemImage: "map")
-                    }
-                    .buttonStyle(.bordered)
+            }
+            
+            // Location Actions - PERFORMANCE: Reduced button complexity
+            HStack(spacing: 12) {
+                Button(action: {
+                    viewModel.updateLocation()
+                }) {
+                    Label("GPS aktualisieren", systemImage: "location.circle")
+                        .font(.caption)
                 }
+                .buttonStyle(.bordered)
+                .disabled(viewModel.isUpdatingLocation)
                 
-                if viewModel.isUpdatingLocation {
-                    HStack {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                        Text("GPS wird aktualisiert...")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                Button(action: {
+                    viewModel.showingLocationPicker = true
+                }) {
+                    Label("Manuell wählen", systemImage: "map")
+                        .font(.caption)
                 }
+                .buttonStyle(.bordered)
+            }
+            
+            // PERFORMANCE: Conditional loading indicator
+            if viewModel.isUpdatingLocation {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("GPS wird aktualisiert...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .transition(.opacity)
             }
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
     
     private func locationDisplayCard(location: CLLocation) -> some View {
@@ -252,7 +323,7 @@ struct EnhancedMemoryCreationView: View {
                     .font(.caption2)
                     .foregroundColor(location.horizontalAccuracy >= 0 ? .secondary : .orange)
                 
-                // Reverse Geocoding Adresse
+                // Reverse Geocoding Adresse - PERFORMANCE: Conditional rendering
                 if let address = viewModel.locationAddress {
                     Text("📍 \(address)")
                         .font(.caption)
@@ -262,8 +333,12 @@ struct EnhancedMemoryCreationView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color(.systemBackground))
         .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
     }
     
     private var noLocationCard: some View {
@@ -287,30 +362,41 @@ struct EnhancedMemoryCreationView: View {
     }
     
     private var photoSection: some View {
-        Section("Fotos (\(viewModel.selectedImages.count)/5)") {
-            VStack(spacing: 12) {
-                // Photo Grid
-                if !viewModel.selectedImages.isEmpty {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
-                        ForEach(Array(viewModel.selectedImages.enumerated()), id: \.offset) { index, image in
-                            photoThumbnail(image: image, index: index)
-                        }
-                    }
-                } else {
-                    emptyPhotoState
-                }
-                
-                // Add Photo Button
-                Button(action: {
-                    viewModel.showingPhotoPicker = true
-                }) {
-                    Label("Fotos hinzufügen", systemImage: "plus.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .disabled(viewModel.selectedImages.count >= 5)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Fotos", systemImage: "photo")
+                    .font(.headline)
+                Spacer()
+                Text("\(viewModel.selectedImages.count)/5")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
+            
+            // PERFORMANCE: Lazy photo grid
+            if !viewModel.selectedImages.isEmpty {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                    ForEach(Array(viewModel.selectedImages.enumerated()), id: \.offset) { index, image in
+                        photoThumbnail(image: image, index: index)
+                    }
+                }
+            } else {
+                emptyPhotoState
+            }
+            
+            // Add Photo Button
+            Button(action: {
+                viewModel.showingPhotoPicker = true
+            }) {
+                Label("Fotos hinzufügen", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.bordered)
+            .disabled(viewModel.selectedImages.count >= 5)
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
     
     private func photoThumbnail(image: UIImage, index: Int) -> some View {
@@ -323,7 +409,9 @@ struct EnhancedMemoryCreationView: View {
                 .cornerRadius(8)
             
             Button(action: {
-                viewModel.removeImage(at: index)
+                withAnimation(.easeOut(duration: 0.2)) {
+                    viewModel.removeImage(at: index)
+                }
             }) {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundColor(.white)
@@ -346,12 +434,19 @@ struct EnhancedMemoryCreationView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
-        .background(Color(.systemGray6))
+        .background(Color(.systemBackground))
         .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
     }
     
     private var dateTimeSection: some View {
-        Section("Zeitpunkt") {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Zeitpunkt", systemImage: "clock")
+                .font(.headline)
+            
             DatePicker(
                 "Wann ist das passiert?",
                 selection: $viewModel.timestamp,
@@ -359,10 +454,13 @@ struct EnhancedMemoryCreationView: View {
             )
             .datePickerStyle(.compact)
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
     
     private var saveSection: some View {
-        Section {
+        VStack(spacing: 12) {
             Button(action: {
                 Task {
                     await viewModel.saveMemory()
@@ -379,22 +477,46 @@ struct EnhancedMemoryCreationView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
+                .padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
             .disabled(!viewModel.canSave || viewModel.isSaving)
             
-            // Offline Notice
+            // Offline Notice - PERFORMANCE: Conditional rendering
             if !viewModel.isOnline {
                 Text("📱 Offline-Modus: Erinnerung wird lokal gespeichert und später synchronisiert")
                     .font(.caption)
                     .foregroundColor(.orange)
-                    .padding(.top, 4)
+                    .multilineTextAlignment(.center)
             }
         }
     }
     
     // MARK: - Helper Methods
+    
+    private func setupView() {
+        // PERFORMANCE: Delayed initialization to reduce initial load
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                isViewInitialized = true
+            }
+            viewModel.loadDraft()
+        }
+    }
+    
+    private func handleScenePhaseChange(_ phase: ScenePhase) {
+        switch phase {
+        case .background:
+            viewModel.saveDraft()
+        case .active:
+            // PERFORMANCE: Nur bei Bedarf neu laden
+            if !isViewInitialized {
+                setupView()
+            }
+        default:
+            break
+        }
+    }
     
     private func handleCancel() {
         if viewModel.hasUnsavedChanges {
@@ -414,15 +536,32 @@ struct LocationPickerView: View {
     
     @State private var cameraPosition: MapCameraPosition
     @State private var selectedCoordinate: CLLocationCoordinate2D?
+    @State private var isMapReady = false
     
     init(selectedLocation: Binding<CLLocation?>, currentLocation: CLLocation?, isPresented: Binding<Bool>) {
         self._selectedLocation = selectedLocation
         self.currentLocation = currentLocation
         self._isPresented = isPresented
         
-        let initialCoordinate = currentLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 52.5200, longitude: 13.4050) // Berlin default
+        // SICHERE Koordinaten-Validierung für Map-Initialisierung
+        let safeCoordinate: CLLocationCoordinate2D
+        
+        if let currentLocation = currentLocation,
+           LocationValidator.isValidLocation(currentLocation) {
+            safeCoordinate = currentLocation.coordinate
+        } else {
+            // Berlin als sicherer Fallback
+            safeCoordinate = CLLocationCoordinate2D(latitude: 52.5200, longitude: 13.4050)
+        }
+        
+        // Zusätzliche Validierung der finalen Koordinaten
+        let finalLatitude = safeCoordinate.latitude.isFinite ? safeCoordinate.latitude : 52.5200
+        let finalLongitude = safeCoordinate.longitude.isFinite ? safeCoordinate.longitude : 13.4050
+        
+        let validatedCoordinate = CLLocationCoordinate2D(latitude: finalLatitude, longitude: finalLongitude)
+        
         self._cameraPosition = State(initialValue: .region(MKCoordinateRegion(
-            center: initialCoordinate,
+            center: validatedCoordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )))
     }
@@ -430,66 +569,14 @@ struct LocationPickerView: View {
     var body: some View {
         NavigationView {
             VStack {
-                Map(position: $cameraPosition, interactionModes: .all) {
-                    // User location
-                    if currentLocation != nil {
-                        UserAnnotation()
-                    }
-                    
-                    // Selected location annotation
-                    if let coordinate = selectedCoordinate {
-                        Annotation("Ausgewählter Standort", coordinate: coordinate) {
-                            Image(systemName: "mappin.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.title)
-                                .background(Circle().fill(Color.white).frame(width: 30, height: 30))
-                                .shadow(radius: 2)
-                        }
-                    }
+                // PERFORMANCE: Conditional map rendering
+                if isMapReady {
+                    mapView
+                } else {
+                    mapLoadingView
                 }
-                .onMapCameraChange { position in
-                    // Update selected coordinate to map center when camera moves
-                    selectedCoordinate = position.region.center
-                }
-                .overlay(
-                    // Crosshair in center
-                    Image(systemName: "plus")
-                        .font(.title)
-                        .foregroundColor(.red)
-                        .background(Circle().fill(Color.white).frame(width: 30, height: 30))
-                        .shadow(radius: 2)
-                )
                 
-                VStack(spacing: 12) {
-                    if let coordinate = selectedCoordinate {
-                        Text("📍 \(coordinate.latitude, specifier: "%.6f"), \(coordinate.longitude, specifier: "%.6f")")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    HStack {
-                        if let currentLocation = currentLocation {
-                            Button("Aktuelle Position") {
-                                let newRegion = MKCoordinateRegion(
-                                    center: currentLocation.coordinate,
-                                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                                )
-                                cameraPosition = .region(newRegion)
-                                selectedCoordinate = currentLocation.coordinate
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                        
-                        Button("Auswählen") {
-                            if let coordinate = selectedCoordinate {
-                                selectedLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-                            }
-                            isPresented = false
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-                .padding()
+                controlsView
             }
             .navigationTitle("Standort wählen")
             .navigationBarTitleDisplayMode(.inline)
@@ -500,11 +587,143 @@ struct LocationPickerView: View {
                     }
                 }
             }
+            .onAppear {
+                // PERFORMANCE: Delayed map loading
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        isMapReady = true
+                    }
+                }
+            }
         }
-        .onAppear {
-            // Set initial selected coordinate to camera center
-            selectedCoordinate = cameraPosition.region?.center
+    }
+    
+    private var mapLoadingView: some View {
+        VStack {
+            ProgressView()
+            Text("Karte wird geladen...")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var mapView: some View {
+        Map(position: $cameraPosition, interactionModes: .all) {
+            // User location
+            if let currentLocation = currentLocation, LocationValidator.isValidLocation(currentLocation) {
+                UserAnnotation()
+            }
+            
+            // Selected location annotation
+            if let coordinate = selectedCoordinate,
+               LocationValidator.isValidCoordinate(latitude: coordinate.latitude, longitude: coordinate.longitude) {
+                Annotation("Ausgewählter Standort", coordinate: coordinate) {
+                    Image(systemName: "mappin.circle.fill")
+                        .foregroundColor(.red)
+                        .font(.title)
+                        .background(Circle().fill(Color.white).frame(width: 30, height: 30))
+                        .shadow(radius: 2)
+                }
+            }
+        }
+        .onMapCameraChange(frequency: .onEnd) {
+            // PERFORMANCE: Reduzierte Update-Frequenz
+            updateSelectedCoordinate(from: cameraPosition)
+        }
+        .overlay(
+            // Crosshair in center
+            Image(systemName: "plus")
+                .font(.title)
+                .foregroundColor(.red)
+                .background(Circle().fill(Color.white).frame(width: 30, height: 30))
+                .shadow(radius: 2)
+        )
+    }
+    
+    private var controlsView: some View {
+        VStack(spacing: 12) {
+            if let coordinate = selectedCoordinate {
+                // SICHERE Koordinaten-Anzeige
+                Text("📍 \(LocationValidator.formatCoordinates(latitude: coordinate.latitude, longitude: coordinate.longitude))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            HStack {
+                if let currentLocation = currentLocation, LocationValidator.isValidLocation(currentLocation) {
+                    Button("Aktuelle Position") {
+                        moveToCurrentLocation(currentLocation)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                
+                Button("Auswählen") {
+                    selectCurrentCoordinate()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!isValidSelection)
+            }
+        }
+        .padding()
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func updateSelectedCoordinate(from position: MapCameraPosition) {
+        guard let region = position.region else {
+            print("⚠️ LocationPickerView: Keine gültige Region verfügbar")
+            return
+        }
+        
+        let newCoordinate = region.center
+        
+        // SICHERE Validierung der Map-Koordinaten
+        if LocationValidator.isValidCoordinate(latitude: newCoordinate.latitude, longitude: newCoordinate.longitude) {
+            selectedCoordinate = newCoordinate
+        } else {
+            print("⚠️ LocationPickerView: Ungültige Koordinaten von Map erhalten: \(newCoordinate.latitude), \(newCoordinate.longitude)")
+        }
+    }
+    
+    private func moveToCurrentLocation(_ location: CLLocation) {
+        let coordinate = location.coordinate
+        
+        // SICHERE Region-Erstellung
+        if LocationValidator.isValidCoordinate(latitude: coordinate.latitude, longitude: coordinate.longitude) {
+            let newRegion = MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+            withAnimation(.easeInOut(duration: 0.5)) {
+                cameraPosition = .region(newRegion)
+            }
+            selectedCoordinate = coordinate
+        } else {
+            print("⚠️ LocationPickerView: Aktuelle Position hat ungültige Koordinaten")
+        }
+    }
+    
+    private func selectCurrentCoordinate() {
+        guard let coordinate = selectedCoordinate,
+              LocationValidator.isValidCoordinate(latitude: coordinate.latitude, longitude: coordinate.longitude) else {
+            print("⚠️ LocationPickerView: Keine gültigen Koordinaten zum Auswählen")
+            return
+        }
+        
+        selectedLocation = LocationValidator.createSafeLocation(
+            latitude: coordinate.latitude, 
+            longitude: coordinate.longitude
+        )
+        isPresented = false
+    }
+    
+    private var isValidSelection: Bool {
+        guard let coordinate = selectedCoordinate else { return false }
+        return LocationValidator.isValidCoordinate(
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude
+        )
     }
 }
 

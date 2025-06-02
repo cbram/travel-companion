@@ -54,7 +54,6 @@ struct ContentView: View {
         .accentColor(.blue)
         .onAppear {
             setupTabBarAppearance()
-            setupSampleDataIfNeeded()
             setupAppStart()
             setupPerformanceMonitoring()
         }
@@ -113,53 +112,54 @@ struct ContentView: View {
         UIView.appearance(whenContainedInInstancesOf: [UIToolbar.self]).translatesAutoresizingMaskIntoConstraints = false
     }
     
-    private func setupSampleDataIfNeeded() {
-        // Prüfe ob bereits Daten vorhanden sind
-        let tripRequest = Trip.fetchRequest()
-        tripRequest.fetchLimit = 1
+    private func initializeServices() async {
+        print("🚀 ContentView: App-Start Setup")
         
-        do {
-            let existingTrips = try viewContext.fetch(tripRequest)
-            if existingTrips.isEmpty {
-                DebugLogger.shared.info("📝 ContentView: Keine Trips gefunden, erstelle Sample Data")
-                SampleDataCreator.createSampleData(in: viewContext)
-                try viewContext.save()
-                DebugLogger.shared.info("✅ ContentView: Sample Data erfolgreich erstellt")
+        // Immediate UI-safe operations first
+        await MainActor.run {
+            locationManager.restoreLastKnownLocation()
+        }
+        
+        // File System Validation (non-blocking)
+        await PhotoFileManager.shared.validateFileSystem()
+        
+        // Offline Queue Processing (falls vorhanden) - im Hintergrund
+        Task.detached(priority: .background) {
+            // Sichere Überprüfung der Queue-Größen mit await
+            let offlineQueueSize = await PhotoFileManager.shared.offlineQueueSize
+            let pendingMemoriesCount = await OfflineMemoryCreator.shared.pendingMemoriesCount
+            
+            if offlineQueueSize > 0 || pendingMemoriesCount > 0 {
+                print("🔄 Processing Offline Queue from previous session")
+                
+                await PhotoFileManager.shared.processOfflineQueue()
+                await OfflineMemoryCreator.shared.syncOfflineMemories()
             }
-        } catch {
-            DebugLogger.shared.error("❌ ContentView: Fehler beim Prüfen/Erstellen von Sample Data: \(error)")
         }
     }
     
     private func setupAppStart() {
-        DebugLogger.shared.info("🚀 ContentView: App-Start Setup")
-        
-        // Immediate UI-safe operations first
-        locationManager.restoreLastKnownLocation()
-        
-        // Heavy operations asynchronously
-        Task { @MainActor in
-            // File System Validation (non-blocking)
-            await PhotoFileManager.shared.validateFileSystem()
+        Task {
+            // Initialisiere Services
+            await initializeServices()
             
-            // Kleine Verzögerung für UI Stabilität
+            // NEUE: Validiere und bereinige Koordinaten beim App-Start
+            CoreDataManager.shared.validateAndFixMemoryCoordinates()
+            
+            #if DEBUG
+            // Zeige Datenbankstatus in Debug-Builds
+            CoreDataManager.shared.validateDatabaseIntegrity()
+            
+            // Validiere TripManager-Status
+            TripManager.shared.validateState()
+            #endif
+            
+            // Performance check
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 Sekunden
             
-            // Offline Queue Processing (falls vorhanden) - im Hintergrund
-            Task.detached(priority: .background) {
-                // Sichere Überprüfung der Queue-Größen mit await
-                let offlineQueueSize = await PhotoFileManager.shared.offlineQueueSize
-                let pendingMemoriesCount = await OfflineMemoryCreator.shared.pendingMemoriesCount
-                
-                if offlineQueueSize > 0 || pendingMemoriesCount > 0 {
-                    DebugLogger.shared.info("🔄 Processing Offline Queue from previous session")
-                    
-                    await PhotoFileManager.shared.processOfflineQueue()
-                    await OfflineMemoryCreator.shared.syncOfflineMemories()
-                }
+            await MainActor.run {
+                print("✅ ContentView: App-Setup abgeschlossen")
             }
-            
-            DebugLogger.shared.info("✅ App-Start Setup abgeschlossen")
         }
     }
     

@@ -1,210 +1,132 @@
 import Foundation
 import CoreData
 
-struct SampleDataCreator {
+/// Utility class for creating sample data for testing and previews
+class SampleDataCreator {
+    
+    // MARK: - Sample Data Creation
+    
+    /// Creates sample data in the given context
     static func createSampleData(in context: NSManagedObjectContext) {
-        // ✅ Prüfe ob bereits Sample Data existieren
-        if hasExistingData(in: context) {
-            print("✅ SampleDataCreator: Sample Data bereits vorhanden - überspringe Erstellung")
-            return
-        }
+        // Clear existing data first (for testing purposes)
+        clearAllData(in: context)
         
-        // Erstelle Sample Users
-        let user1 = createUser1(in: context)
-        let user2 = createUser2(in: context)
-        let user3 = createUser3(in: context)
+        // Create sample user
+        let sampleUser = createSampleUser(in: context)
         
-        // Erstelle Sample Trips
-        let trip1 = createTrip1(with: user1, in: context)
-        let trip2 = createTrip2(with: user2, in: context)
-        let trip3 = createTrip3(with: user3, in: context)
+        // Create sample trips
+        let activeTrip = createSampleActiveTrip(for: sampleUser, in: context)
+        let pastTrip = createSamplePastTrip(for: sampleUser, in: context)
         
-        // Füge Participants zu Trips hinzu
-        // Note: Die participants relationship ist Many-to-Many und erwartet NSSet
-        trip1.addToParticipants(user2)
-        trip2.addToParticipants(user1)
-        trip3.addToParticipants(user2)
+        // Create sample memories for trips
+        createSampleMemories(for: activeTrip, author: sampleUser, in: context)
+        createSampleMemories(for: pastTrip, author: sampleUser, in: context)
         
-        // Erstelle Sample Memories für jeden Trip
-        createMemoriesForTrip1(trip1, users: [user1, user2], in: context)
-        createMemoriesForTrip2(trip2, users: [user2, user1], in: context)
-        createMemoriesForTrip3(trip3, users: [user3, user2], in: context)
-        
-        // Speichere den Context
+        // Save context
         do {
             try context.save()
-            print("✅ SampleDataCreator: Sample-Daten erfolgreich erstellt")
+            print("✅ SampleDataCreator: Sample data created successfully")
         } catch {
-            print("❌ SampleDataCreator: Fehler beim Speichern: \(error)")
+            print("❌ SampleDataCreator: Error creating sample data: \(error)")
         }
     }
     
-    // MARK: - User Creation
-    private static func createUser1(in context: NSManagedObjectContext) -> User {
+    // MARK: - Sample User Creation
+    
+    static func createSampleUser(in context: NSManagedObjectContext) -> User {
         let user = User(context: context)
         user.id = UUID()
-        user.email = "alice@travelcompanion.app"
-        user.displayName = "Alice Müller"
+        user.email = "test@example.com"
+        user.displayName = "Test Benutzer"
         user.createdAt = Date()
         user.isActive = true
-        user.avatarURL = "https://example.com/avatars/alice.jpg"
         return user
     }
     
-    private static func createUser2(in context: NSManagedObjectContext) -> User {
-        let user = User(context: context)
-        user.id = UUID()
-        user.email = "bob@travelcompanion.app"
-        user.displayName = "Bob Schmidt"
-        user.createdAt = Date()
-        user.isActive = true
-        user.avatarURL = "https://example.com/avatars/bob.jpg"
-        return user
-    }
+    // MARK: - Sample Trip Creation
     
-    private static func createUser3(in context: NSManagedObjectContext) -> User {
-        let user = User(context: context)
-        user.id = UUID()
-        user.email = "charlie@travelcompanion.app"
-        user.displayName = "Charlie Weber"
-        user.createdAt = Date()
-        user.isActive = false
-        user.avatarURL = "https://example.com/avatars/charlie.jpg"
-        return user
-    }
-    
-    // MARK: - Trip Creation
-    private static func createTrip1(with owner: User, in context: NSManagedObjectContext) -> Trip {
+    static func createSampleActiveTrip(for user: User, in context: NSManagedObjectContext) -> Trip {
         let trip = Trip(context: context)
         trip.id = UUID()
-        trip.title = "Sommerurlaub Italien"
-        trip.tripDescription = "Entspannter Familienurlaub an der Amalfiküste"
-        trip.startDate = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
-        trip.endDate = Calendar.current.date(byAdding: .day, value: -23, to: Date())!
-        trip.createdAt = Calendar.current.date(byAdding: .day, value: -35, to: Date())!
-        trip.isActive = false
-        trip.owner = owner
-        return trip
-    }
-    
-    private static func createTrip2(with owner: User, in context: NSManagedObjectContext) -> Trip {
-        let trip = Trip(context: context)
-        trip.id = UUID()
-        trip.title = "Wochenendtrip Berlin"
-        trip.tripDescription = "Städtetrip mit Freunden"
-        trip.startDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-        trip.endDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())!
-        trip.createdAt = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
-        trip.isActive = false
-        trip.owner = owner
-        return trip
-    }
-    
-    private static func createTrip3(with owner: User, in context: NSManagedObjectContext) -> Trip {
-        let trip = Trip(context: context)
-        trip.id = UUID()
-        trip.title = "Aktuelle Reise München"
-        trip.tripDescription = "Geschäftsreise nach München"
-        trip.startDate = Date()
-        trip.endDate = Calendar.current.date(byAdding: .day, value: 3, to: Date())!
-        trip.createdAt = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+        trip.title = "Aktuelle Italien Reise"
+        trip.tripDescription = "Eine wunderbare Reise durch die Toskana"
+        trip.startDate = Calendar.current.date(byAdding: .day, value: -3, to: Date())
         trip.isActive = true
-        trip.owner = owner
+        trip.createdAt = Date()
+        trip.owner = user
         return trip
     }
     
-    // MARK: - Memory Creation
-    private static func createMemoriesForTrip1(_ trip: Trip, users: [User], in context: NSManagedObjectContext) {
-        // Memory 1 mit Photo
-        let memory1 = Memory(context: context)
-        memory1.id = UUID()
-        memory1.title = "Ankunft am Strand"
-        memory1.content = "Endlich angekommen! Der Strand ist wunderschön."
-        memory1.latitude = 40.6318
-        memory1.longitude = 14.6026
-        memory1.timestamp = Calendar.current.date(byAdding: .hour, value: -720, to: Date())!
-        memory1.createdAt = Calendar.current.date(byAdding: .hour, value: -720, to: Date())!
-        memory1.author = users[0]
-        memory1.trip = trip
-        
-        // Photo für Memory 1
-        let photo1 = Photo(context: context)
-        photo1.id = UUID()
-        photo1.filename = "beach_arrival.jpg"
-        photo1.localURL = "/Documents/Photos/beach_arrival.jpg"
-        photo1.cloudURL = "https://cloud.example.com/photos/beach_arrival.jpg"
-        photo1.createdAt = Calendar.current.date(byAdding: .hour, value: -720, to: Date())!
-        photo1.memory = memory1
-        
-        // Memory 2
-        let memory2 = Memory(context: context)
-        memory2.id = UUID()
-        memory2.title = "Pizza am Hafen"
-        memory2.content = "Beste Pizza meines Lebens! 🍕"
-        memory2.latitude = 40.6328
-        memory2.longitude = 14.6030
-        memory2.timestamp = Calendar.current.date(byAdding: .hour, value: -700, to: Date())!
-        memory2.createdAt = Calendar.current.date(byAdding: .hour, value: -700, to: Date())!
-        memory2.author = users[1]
-        memory2.trip = trip
-        
-        // Memory 3
-        let memory3 = Memory(context: context)
-        memory3.id = UUID()
-        memory3.title = "Sonnenuntergang"
-        memory3.content = "Magischer Sonnenuntergang über dem Meer"
-        memory3.latitude = 40.6315
-        memory3.longitude = 14.6020
-        memory3.timestamp = Calendar.current.date(byAdding: .hour, value: -680, to: Date())!
-        memory3.createdAt = Calendar.current.date(byAdding: .hour, value: -680, to: Date())!
-        memory3.author = users[0]
-        memory3.trip = trip
+    static func createSamplePastTrip(for user: User, in context: NSManagedObjectContext) -> Trip {
+        let trip = Trip(context: context)
+        trip.id = UUID()
+        trip.title = "Spanien Urlaub"
+        trip.tripDescription = "Barcelona und Madrid Städtereise"
+        trip.startDate = Calendar.current.date(byAdding: .month, value: -2, to: Date())
+        trip.isActive = false
+        trip.createdAt = Calendar.current.date(byAdding: .month, value: -2, to: Date()) ?? Date()
+        trip.owner = user
+        return trip
     }
     
-    private static func createMemoriesForTrip2(_ trip: Trip, users: [User], in context: NSManagedObjectContext) {
-        // Memory 1
-        let memory1 = Memory(context: context)
-        memory1.id = UUID()
-        memory1.title = "Brandenburger Tor"
-        memory1.content = "Klassisches Berlin-Foto geschossen!"
-        memory1.latitude = 52.5163
-        memory1.longitude = 13.3777
-        memory1.timestamp = Calendar.current.date(byAdding: .hour, value: -168, to: Date())!
-        memory1.createdAt = Calendar.current.date(byAdding: .hour, value: -168, to: Date())!
-        memory1.author = users[0]
-        memory1.trip = trip
+    // MARK: - Sample Trip Creation for Previews
+    
+    static func createSampleTrip() -> Trip {
+        let context = PersistenceController.preview.container.viewContext
+        let trip = Trip(context: context)
+        trip.id = UUID()
+        trip.title = "Italien Rundreise"
+        trip.tripDescription = "Eine wunderbare Reise durch die Toskana und nach Rom"
+        trip.startDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+        trip.isActive = true
+        trip.createdAt = Date()
+        return trip
+    }
+    
+    // MARK: - Sample Memory Creation
+    
+    static func createSampleMemories(for trip: Trip, author: User, in context: NSManagedObjectContext) {
+        let memoryData = [
+            ("Ankunft am Flughafen", "Endlich angekommen! Das Wetter ist perfekt.", 41.9028, 12.4964),
+            ("Colosseum Besichtigung", "Beeindruckende antike Architektur", 41.8902, 12.4922),
+            ("Trevi Brunnen", "Münze reingeworfen für Glück", 41.9009, 12.4833),
+            ("Vatikan Museum", "Unglaubliche Kunstsammlung", 41.9029, 12.4545),
+            ("Toskana Weinprobe", "Fantastischer Chianti", 43.7711, 11.2486)
+        ]
         
-        // Memory 2
-        let memory2 = Memory(context: context)
-        memory2.id = UUID()
-        memory2.title = "Museumsinsel"
-        memory2.content = "So viel Geschichte an einem Ort"
-        memory2.latitude = 52.5218
-        memory2.longitude = 13.3988
-        memory2.timestamp = Calendar.current.date(byAdding: .hour, value: -150, to: Date())!
-        memory2.createdAt = Calendar.current.date(byAdding: .hour, value: -150, to: Date())!
-        memory2.author = users[1]
-        memory2.trip = trip
+        for (index, data) in memoryData.enumerated() {
+            let memory = Memory(context: context)
+            memory.id = UUID()
+            memory.title = data.0
+            memory.content = data.1
+            memory.latitude = data.2
+            memory.longitude = data.3
+            memory.timestamp = Calendar.current.date(byAdding: .hour, value: -index * 6, to: Date()) ?? Date()
+            memory.createdAt = Calendar.current.date(byAdding: .hour, value: -index * 6, to: Date()) ?? Date()
+            memory.author = author
+            memory.trip = trip
+        }
     }
     
-    private static func createMemoriesForTrip3(_ trip: Trip, users: [User], in context: NSManagedObjectContext) {
-        // Memory 1
-        let memory1 = Memory(context: context)
-        memory1.id = UUID()
-        memory1.title = "München Hauptbahnhof"
-        memory1.content = "Angekommen in München! Zeit für Weißwurst 🥨"
-        memory1.latitude = 48.1401
-        memory1.longitude = 11.5581
-        memory1.timestamp = Calendar.current.date(byAdding: .hour, value: -2, to: Date())!
-        memory1.createdAt = Calendar.current.date(byAdding: .hour, value: -2, to: Date())!
-        memory1.author = users[0]
-        memory1.trip = trip
+    // MARK: - Sample Memory for Previews
+    
+    static func createSampleMemory() -> Memory {
+        let context = PersistenceController.preview.container.viewContext
+        let memory = Memory(context: context)
+        memory.id = UUID()
+        memory.title = "Schöner Aussichtspunkt"
+        memory.content = "Ein wunderschöner Blick über die Stadt bei Sonnenuntergang"
+        memory.latitude = 41.9028
+        memory.longitude = 12.4964
+        memory.timestamp = Date()
+        memory.createdAt = Date()
+        return memory
     }
     
-    // MARK: - Helper Methods
+    // MARK: - Data Management
+    
     static func clearAllData(in context: NSManagedObjectContext) {
-        // Lösche alle Entities in korrekter Reihenfolge
-        let entities = ["Photo", "Memory", "Trip", "User", "Item"]
+        let entities = ["Photo", "Memory", "Trip", "User"]
         
         for entityName in entities {
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
@@ -212,30 +134,27 @@ struct SampleDataCreator {
             
             do {
                 try context.execute(deleteRequest)
-                print("✅ SampleDataCreator: \(entityName) Daten gelöscht")
+                print("✅ SampleDataCreator: \(entityName) data cleared")
             } catch {
-                print("❌ SampleDataCreator: Fehler beim Löschen von \(entityName): \(error)")
+                print("❌ SampleDataCreator: Error clearing \(entityName): \(error)")
             }
-        }
-        
-        // Speichere Context
-        do {
-            try context.save()
-            print("✅ SampleDataCreator: Alle Daten erfolgreich gelöscht")
-        } catch {
-            print("❌ SampleDataCreator: Fehler beim Speichern nach dem Löschen: \(error)")
         }
     }
     
-    static func hasExistingData(in context: NSManagedObjectContext) -> Bool {
-        let memoryRequest = Memory.fetchRequest()
+    // MARK: - Data Summary
+    
+    static func printDataSummary(using coreDataManager: CoreDataManager) {
+        let users = coreDataManager.fetchAllUsers()
+        let trips = coreDataManager.fetchAllTrips()
         
-        do {
-            let count = try context.count(for: memoryRequest)
-            return count > 0
-        } catch {
-            print("❌ SampleDataCreator: Fehler beim Überprüfen der Memory-Daten: \(error)")
-            return false
+        print("\n📊 Data Summary:")
+        print("Users: \(users.count)")
+        print("Trips: \(trips.count)")
+        
+        for trip in trips {
+            let memories = coreDataManager.fetchMemories(for: trip)
+            print("  - \(trip.title ?? "Unnamed Trip"): \(memories.count) memories")
         }
+        print("")
     }
 } 

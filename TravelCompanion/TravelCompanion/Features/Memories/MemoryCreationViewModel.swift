@@ -55,35 +55,22 @@ class MemoryCreationViewModel: ObservableObject {
     }
     
     // MARK: - Setup Methods
-    private func setupInitialData() {
-        // Hole aktive Reise und User direkt aus der Core Data mit korrektem Context Management
-        
+    func setupInitialData() {
         // Lade ersten verfügbaren User im View Context
         let users = coreDataManager.fetchAllUsers()
         if users.isEmpty {
-            // Erstelle Sample Data falls leer
-            print("📝 MemoryCreationViewModel: Keine User gefunden, erstelle Sample Data")
-            SampleDataCreator.createSampleData(in: coreDataManager.viewContext)
-            
-            // Speichere sofort nach Sample Data Erstellung
-            do {
-                try coreDataManager.viewContext.save()
-                print("✅ MemoryCreationViewModel: Sample Data gespeichert")
-            } catch {
-                print("❌ MemoryCreationViewModel: Sample Data Speicherfehler: \(error)")
-            }
-            
-            let newUsers = coreDataManager.fetchAllUsers()
-            self.user = newUsers.first
+            // Keine automatische User-Erstellung mehr
+            print("📝 MemoryCreationViewModel: Keine User gefunden - User muss manuell erstellt werden")
+            self.user = nil
         } else {
             self.user = users.first
         }
         
-        // Lade aktive Reise für User - wichtig: User muss aus viewContext kommen
+        // Lade aktive Reise für User
         if let currentUser = user {
             self.trip = coreDataManager.fetchActiveTrip(for: currentUser)
             
-            // Falls keine aktive Reise, nimm die erste verfügbare oder erstelle eine
+            // Falls keine aktive Reise, nimm die erste verfügbare
             if trip == nil {
                 let allTrips = coreDataManager.fetchTrips(for: currentUser)
                 if let firstTrip = allTrips.first {
@@ -97,21 +84,9 @@ class MemoryCreationViewModel: ObservableObject {
                         print("❌ MemoryCreationViewModel: Fehler beim Speichern der aktiven Reise: \(error)")
                     }
                 } else {
-                    // Erstelle neue Standard-Reise direkt im viewContext
-                    let newTrip = coreDataManager.createTrip(
-                        title: "Meine erste Reise",
-                        description: "Willkommen bei TravelCompanion!",
-                        startDate: Date(),
-                        owner: currentUser
-                    )
-                    coreDataManager.setTripActive(newTrip, isActive: true)
-                    do {
-                        try coreDataManager.viewContext.save()
-                        self.trip = newTrip
-                        print("✅ MemoryCreationViewModel: Neue Standard-Reise erstellt")
-                    } catch {
-                        print("❌ MemoryCreationViewModel: Fehler beim Speichern der neuen Reise: \(error)")
-                    }
+                    // Keine automatische Trip-Erstellung mehr
+                    print("📝 MemoryCreationViewModel: Keine Trips gefunden - Trip muss manuell erstellt werden")
+                    self.trip = nil
                 }
             }
         }
@@ -133,14 +108,16 @@ class MemoryCreationViewModel: ObservableObject {
             print("✅ MemoryCreationViewModel: Location bereits verfügbar: \(location.formattedCoordinates)")
         } else {
             // Request location update
-            updateLocation()
+            Task { @MainActor in
+                await updateLocation()
+            }
         }
     }
     
     @Published var isUpdatingLocation = false
     private var locationUpdateTask: Task<Void, Never>?
     
-    func updateLocation() {
+    func updateLocation() async {
         // Verhindere mehrfache gleichzeitige Location-Updates
         guard !isUpdatingLocation else {
             print("⏸️ MemoryCreationViewModel: Location-Update bereits aktiv, überspringe")
@@ -163,35 +140,34 @@ class MemoryCreationViewModel: ObservableObject {
         isUpdatingLocation = true
         print("📍 MemoryCreationViewModel: Starte Location-Update...")
         
-        locationUpdateTask = Task {
-            // Single location request mit Timeout
-            locationManager.requestCurrentLocation()
-            
-            // Warten auf Update mit Timeout
-            for attempt in 1...3 {
-                if Task.isCancelled { return }
-                
-                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 Sekunden
-                
-                if let location = locationManager.currentLocation {
-                    await MainActor.run {
-                        self.currentLocation = location
-                        self.isUpdatingLocation = false
-                        print("✅ MemoryCreationViewModel: GPS-Location erhalten: \(location.formattedCoordinates)")
-                    }
-                    return
-                }
-                
-                print("📍 MemoryCreationViewModel: GPS-Versuch \(attempt)/3...")
+        // VEREINFACHTE Location-Anfrage ohne Timer oder Retry-Logic
+        locationUpdateTask = Task { @MainActor in
+            defer {
+                isUpdatingLocation = false
             }
             
-            // Fallback nach Timeout
-            await MainActor.run {
-                if self.currentLocation == nil {
-                    self.currentLocation = CLLocation(latitude: 48.1351, longitude: 11.5820)
-                    print("📍 MemoryCreationViewModel: Verwende München als Fallback-Location")
+            // Warte kurz und prüfe nochmal ob Location verfügbar ist
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            
+            if let location = locationManager.currentLocation {
+                self.currentLocation = location
+                print("✅ MemoryCreationViewModel: GPS-Location erhalten: \(location.formattedCoordinates)")
+            } else {
+                // Fordere einmalig neue Location an
+                locationManager.requestCurrentLocation()
+                
+                // Warte maximal 5 Sekunden auf Update
+                for _ in 0..<10 {
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                    if let location = locationManager.currentLocation,
+                       Date().timeIntervalSince(location.timestamp) < 10.0 {
+                        self.currentLocation = location
+                        print("✅ MemoryCreationViewModel: GPS-Location erhalten: \(location.formattedCoordinates)")
+                        return
+                    }
                 }
-                self.isUpdatingLocation = false
+                
+                print("⚠️ MemoryCreationViewModel: Location-Update Timeout - verwende letzte bekannte Position oder Standard")
             }
         }
     }
@@ -287,26 +263,22 @@ class MemoryCreationViewModel: ObservableObject {
         print("   - Trip: \(trip.title ?? "Unknown")")
         print("   - User: \(user.displayName ?? "Unknown")")
         
-        // Direkte Memory-Erstellung im Main Context für Context-Kompatibilität
+        // OPTIMIERTE Memory-Erstellung: Background Context für bessere Performance
         do {
-            // Memory direkt im viewContext erstellen - alle Objekte sind aus dem gleichen Context
-            let memory = coreDataManager.createMemory(
+            let memoryResult = try await createMemoryInBackground(
                 title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                 content: content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content.trimmingCharacters(in: .whitespacesAndNewlines),
                 latitude: lat,
                 longitude: lon,
-                author: user, // user ist aus viewContext
-                trip: trip    // trip ist aus viewContext
+                tripID: trip.id!,
+                userID: user.id!
             )
-            
-            // Context speichern
-            try coreDataManager.viewContext.save()
             
             print("✅ MemoryCreationViewModel: Memory erfolgreich gespeichert")
             
-            // Foto separat speichern falls vorhanden und mit Memory verknüpfen
+            // Foto separat speichern falls vorhanden
             if let image = selectedImage {
-                await savePhotoOptimized(image: image, for: memory)
+                await savePhotoOptimized(image: image, memoryID: memoryResult.id!)
             }
             
             isSaving = false
@@ -324,11 +296,62 @@ class MemoryCreationViewModel: ObservableObject {
         }
     }
     
-    /// Optimierte Foto-Speicherung mit Core Data Verknüpfung
-    private func savePhotoOptimized(image: UIImage, for memory: Memory) async {
+    /// THREAD-SICHERE Background Memory-Erstellung
+    private func createMemoryInBackground(title: String, content: String?, latitude: Double, longitude: Double, tripID: UUID, userID: UUID) async throws -> Memory {
+        return try await withCheckedThrowingContinuation { continuation in
+            let backgroundContext = coreDataManager.backgroundContext
+            
+            backgroundContext.perform {
+                do {
+                    // Trip und User im Background Context finden
+                    let tripRequest: NSFetchRequest<Trip> = Trip.fetchRequest()
+                    tripRequest.predicate = NSPredicate(format: "id == %@", tripID as CVarArg)
+                    tripRequest.fetchLimit = 1
+                    
+                    let userRequest: NSFetchRequest<User> = User.fetchRequest()
+                    userRequest.predicate = NSPredicate(format: "id == %@", userID as CVarArg)
+                    userRequest.fetchLimit = 1
+                    
+                    guard let backgroundTrip = try backgroundContext.fetch(tripRequest).first,
+                          let backgroundUser = try backgroundContext.fetch(userRequest).first else {
+                        throw NSError(domain: "MemoryCreation", code: 1, userInfo: [NSLocalizedDescriptionKey: "Trip oder User nicht gefunden"])
+                    }
+                    
+                    // Memory erstellen
+                    let memory = Memory(context: backgroundContext)
+                    memory.id = UUID()
+                    memory.title = title
+                    memory.content = content
+                    memory.latitude = latitude
+                    memory.longitude = longitude
+                    memory.timestamp = Date()
+                    memory.createdAt = Date()
+                    memory.author = backgroundUser
+                    memory.trip = backgroundTrip
+                    
+                    // Background Context speichern
+                    try backgroundContext.save()
+                    
+                    // Memory ID für Main Context zurückgeben
+                    let memoryID = memory.objectID
+                    
+                    DispatchQueue.main.async {
+                        let mainContextMemory = self.coreDataManager.viewContext.object(with: memoryID) as! Memory
+                        continuation.resume(returning: mainContextMemory)
+                    }
+                    
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Optimierte Foto-Speicherung mit Background Processing
+    private func savePhotoOptimized(image: UIImage, memoryID: UUID) async {
         print("📷 MemoryCreationViewModel: Speichere Foto optimiert...")
         
-        // Vereinfachte synchrone Verarbeitung
+        // Foto-Verarbeitung im Background - FIXED für MainActor Isolation
         let maxDimension: CGFloat = 800
         let resizedImage = resizeImage(image, maxDimension: maxDimension)
         
@@ -349,19 +372,45 @@ class MemoryCreationViewModel: ObservableObject {
             return
         }
         
-        // Photo-Entity in Core Data erstellen und mit Memory verknüpfen
-        let photo = coreDataManager.createPhoto(
-            filename: filename,
-            localURL: localURL,
-            memory: memory
-        )
-        
-        do {
-            // Context erneut speichern für die Photo-Entity
-            try coreDataManager.viewContext.save()
-            print("✅ MemoryCreationViewModel: Photo-Entity erfolgreich erstellt und verknüpft")
-        } catch {
-            print("❌ MemoryCreationViewModel: Fehler beim Speichern der Photo-Entity: \(error)")
+        // Photo-Entity in Background Context erstellen
+        await createPhotoEntity(filename: filename, localURL: localURL, memoryID: memoryID)
+    }
+    
+    /// Thread-sichere Photo-Entity Erstellung
+    private func createPhotoEntity(filename: String, localURL: String, memoryID: UUID) async {
+        await withCheckedContinuation { continuation in
+            let backgroundContext = coreDataManager.backgroundContext
+            
+            backgroundContext.perform {
+                do {
+                    // Memory im Background Context finden
+                    let memoryRequest: NSFetchRequest<Memory> = Memory.fetchRequest()
+                    memoryRequest.predicate = NSPredicate(format: "id == %@", memoryID as CVarArg)
+                    memoryRequest.fetchLimit = 1
+                    
+                    guard let backgroundMemory = try backgroundContext.fetch(memoryRequest).first else {
+                        print("❌ MemoryCreationViewModel: Memory nicht im Background Context gefunden")
+                        continuation.resume()
+                        return
+                    }
+                    
+                    // Photo-Entity erstellen
+                    let photo = Photo(context: backgroundContext)
+                    photo.id = UUID()
+                    photo.filename = filename
+                    photo.localURL = localURL
+                    photo.createdAt = Date()
+                    photo.memory = backgroundMemory
+                    
+                    try backgroundContext.save()
+                    print("✅ MemoryCreationViewModel: Photo-Entity erfolgreich erstellt und verknüpft")
+                    continuation.resume()
+                    
+                } catch {
+                    print("❌ MemoryCreationViewModel: Fehler beim Speichern der Photo-Entity: \(error)")
+                    continuation.resume()
+                }
+            }
         }
     }
     
@@ -427,6 +476,8 @@ class MemoryCreationViewModel: ObservableObject {
         content = ""
         selectedImage = nil
         photoPickerItem = nil
-        updateLocation()
+        Task { @MainActor in
+            await updateLocation()
+        }
     }
 } 

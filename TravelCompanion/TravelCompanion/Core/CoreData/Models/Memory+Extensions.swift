@@ -46,7 +46,7 @@ extension Memory {
         return formatter.string(from: timestamp)
     }
     
-    /// Location als CLLocation
+    /// Location als CLLocation - SICHER vor NaN-Werten
     var location: CLLocation {
         // Validiere Koordinaten bevor CLLocation erstellt wird
         let lat = latitude.isFinite ? latitude : 0.0
@@ -59,15 +59,27 @@ extension Memory {
         return CLLocation(latitude: validLat, longitude: validLon)
     }
     
-    /// Koordinaten als String
+    /// Koordinaten als String - KANN NaN enthalten für Debug-Zwecke
     var coordinatesString: String {
         return String(format: "%.6f, %.6f", latitude, longitude)
     }
     
-    /// Formatierte Location für Display
+    /// Formatierte Location für Display - SICHER vor NaN-Werten
     var formattedLocation: String {
-        // Vereinfachte Formatierung der Koordinaten für UI
-        return String(format: "%.4f°, %.4f°", latitude, longitude)
+        // Sichere Formatierung der Koordinaten für UI
+        let safeLat = latitude.isFinite ? latitude : 0.0
+        let safeLon = longitude.isFinite ? longitude : 0.0
+        return String(format: "%.4f°, %.4f°", safeLat, safeLon)
+    }
+    
+    /// NEUE EIGENSCHAFT: Sichere formatierte Location die NaN-Werte abfängt
+    var safeFormattedLocation: String {
+        // Verwende LocationValidator für sichere Formatierung
+        guard LocationValidator.isValidCoordinate(latitude: latitude, longitude: longitude) else {
+            return "Standort unbekannt"
+        }
+        
+        return LocationValidator.formatCoordinates(latitude: latitude, longitude: longitude, precision: 4)
     }
     
     /// Anzahl der Fotos

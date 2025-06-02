@@ -7,24 +7,72 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @EnvironmentObject private var tripManager: TripManager
     @EnvironmentObject private var userManager: UserManager
+    @EnvironmentObject private var authenticationState: AuthenticationState
+    @State private var showingUserProfile = false
+    @State private var showingUserSelection = false
     
     var body: some View {
         NavigationView {
             List {
-                // User Info Section
+                // User Profile Section - Enhanced
                 Section("Benutzer") {
-                    HStack {
-                        Image(systemName: "person.circle.fill")
-                            .foregroundColor(.blue)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(userManager.currentUser?.formattedDisplayName ?? "Unbekannt")
-                                .font(.headline)
-                            Text(userManager.currentUser?.email ?? "")
-                                .font(.caption)
+                    Button(action: {
+                        showingUserProfile = true
+                    }) {
+                        HStack {
+                            // User Avatar
+                            AsyncImage(url: URL(string: userManager.currentUser?.avatarURL ?? "")) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Image(systemName: "person.circle.fill")
+                                    .foregroundColor(.blue)
+                            }
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(userManager.currentUser?.formattedDisplayName ?? "Unbekannt")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                
+                                Text(userManager.currentUser?.email ?? "")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                if let stats = userManager.currentUser {
+                                    Text("\(stats.tripsCount) Reisen • \(stats.memoriesCount) Erinnerungen")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
+                                .font(.caption)
                         }
-                        Spacer()
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Benutzer wechseln Button
+                    Button(action: {
+                        showingUserSelection = true
+                    }) {
+                        HStack {
+                            Image(systemName: "person.2.circle")
+                                .foregroundColor(.orange)
+                            Text("Benutzer wechseln")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 
                 // Trip Statistics Section
@@ -123,44 +171,6 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Debug Section (nur in Development)
-                #if DEBUG
-                Section("Development") {
-                    Button(action: {
-                        viewModel.createSampleData()
-                    }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.green)
-                            Text("Sample Data erstellen")
-                                .foregroundColor(.green)
-                        }
-                    }
-                    
-                    Button(action: {
-                        viewModel.showDataSummary(trips: tripManager.allTrips)
-                    }) {
-                        HStack {
-                            Image(systemName: "chart.bar.fill")
-                                .foregroundColor(.blue)
-                            Text("Daten-Zusammenfassung")
-                                .foregroundColor(.blue)
-                        }
-                    }
-                    
-                    Button(action: {
-                        viewModel.testLocationServices()
-                    }) {
-                        HStack {
-                            Image(systemName: "location.fill")
-                                .foregroundColor(.orange)
-                            Text("GPS Test starten")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                }
-                #endif
-                
                 // Support Section
                 Section("Support") {
                     HStack {
@@ -186,6 +196,12 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.large)
             .refreshable {
                 viewModel.refreshData(trips: tripManager.allTrips)
+            }
+            .sheet(isPresented: $showingUserProfile) {
+                UserProfileView()
+            }
+            .sheet(isPresented: $showingUserSelection) {
+                UserSelectionView()
             }
             .alert("Cache leeren", isPresented: $viewModel.showClearCacheAlert) {
                 Button("Löschen", role: .destructive) {
@@ -294,29 +310,39 @@ class SettingsViewModel: ObservableObject {
     }
     
     func clearCache() {
-        // Clear UserDefaults
-        let domain = Bundle.main.bundleIdentifier!
-        UserDefaults.standard.removePersistentDomain(forName: domain)
-        UserDefaults.standard.synchronize()
-        
-        showInfo("Cache wurde geleert")
-    }
-    
-    func createSampleData() {
-        SampleDataCreator.createSampleData(in: CoreDataManager.shared.viewContext)
-        showInfo("Sample Data wurde erstellt")
-    }
-    
-    func showDataSummary(trips: [Trip]) {
-        let tripsCount = trips.count
-        let memoriesCount = totalMemoriesCount
-        let message = "Trips: \(tripsCount)\nMemories: \(memoriesCount)"
-        showInfo(message)
-    }
-    
-    func testLocationServices() {
-        LocationManager.shared.requestPermission()
-        showInfo("GPS Test gestartet - siehe Console für Details")
+        Task {
+            // 1. UserDefaults leeren
+            let domain = Bundle.main.bundleIdentifier!
+            UserDefaults.standard.removePersistentDomain(forName: domain)
+            UserDefaults.standard.synchronize()
+            
+            // 2. URL Cache leeren
+            URLCache.shared.removeAllCachedResponses()
+            
+            // 3. Photo File Manager Cache leeren (aber nicht alle Dateien)
+            await PhotoFileManager.shared.optimizeFileSystem()
+            
+            // 4. System Caches
+            if let cachesURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+                do {
+                    let cacheContents = try FileManager.default.contentsOfDirectory(at: cachesURL, includingPropertiesForKeys: nil)
+                    for itemURL in cacheContents {
+                        // Nur temporäre Cache-Dateien löschen, keine App-Daten
+                        if itemURL.lastPathComponent.contains("Cache") || 
+                           itemURL.lastPathComponent.contains("tmp") ||
+                           itemURL.pathExtension == "tmp" {
+                            try FileManager.default.removeItem(at: itemURL)
+                        }
+                    }
+                } catch {
+                    print("Cache cleanup error: \(error)")
+                }
+            }
+            
+            await MainActor.run {
+                showInfo("Cache wurde geleert - App-Daten bleiben erhalten")
+            }
+        }
     }
     
     func sendFeedback() {
@@ -346,13 +372,22 @@ extension FileManager {
         ]
         
         var size: UInt64 = 0
-        let enumerator = enumerator(at: url, includingPropertiesForKeys: resourceKeys)!
+        
+        // Sicheres Handling des Enumerators
+        guard let enumerator = enumerator(at: url, includingPropertiesForKeys: resourceKeys) else {
+            throw NSError(domain: "FileManagerError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not create directory enumerator"])
+        }
         
         for case let fileURL as URL in enumerator {
-            let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
-            
-            if resourceValues.isRegularFile == true {
-                size += UInt64(resourceValues.totalFileAllocatedSize ?? resourceValues.fileAllocatedSize ?? 0)
+            do {
+                let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
+                
+                if resourceValues.isRegularFile == true {
+                    size += UInt64(resourceValues.totalFileAllocatedSize ?? resourceValues.fileAllocatedSize ?? 0)
+                }
+            } catch {
+                // Einzelne Dateifehler ignorieren, aber weiter iterieren
+                continue
             }
         }
         

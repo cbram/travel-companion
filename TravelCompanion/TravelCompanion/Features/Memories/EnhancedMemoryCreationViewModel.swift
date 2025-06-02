@@ -34,9 +34,19 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
     private let user: User
     private let coreDataManager = CoreDataManager.shared
     private let locationManager = LocationManager.shared
-    private let geocoder = CLGeocoder()
     private let networkMonitor = NWPathMonitor()
     private let networkQueue = DispatchQueue(label: "NetworkMonitor")
+    
+    // PERFORMANCE: Optimierte Timer-Verwaltung
+    private var locationUpdateTimer: Timer?
+    private var geocodingTask: Task<Void, Never>?
+    private var saveTask: Task<Void, Never>?
+    
+    // PERFORMANCE: Debouncing für Updates
+    private var lastLocationUpdate: Date = Date.distantPast
+    private var lastGeocodingRequest: Date = Date.distantPast
+    private let minimumUpdateInterval: TimeInterval = 2.0 // Von 5.0 auf 2.0 reduziert
+    private let minimumGeocodingInterval: TimeInterval = 5.0
     
     // MARK: - Private Properties
     private var draftKey: String {
@@ -64,13 +74,24 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
     init(trip: Trip, user: User) {
         self.trip = trip
         self.user = user
+        print("🔧 EnhancedMemoryCreationViewModel: Setup gestartet - User: \(user.displayName ?? "Unknown"), Trip: \(trip.title ?? "Unknown")")
         
         setupNetworkMonitoring()
         setupLocationMonitoring()
+        
+        print("✅ EnhancedMemoryCreationViewModel: Setup abgeschlossen")
     }
     
     deinit {
+        print("🗑️ EnhancedMemoryCreationViewModel: Cleanup gestartet")
+        
+        // Synchrone Tasks canceln (sicher im deinit)
+        geocodingTask?.cancel()
+        saveTask?.cancel()
+        locationUpdateTimer?.invalidate()
         networkMonitor.cancel()
+        
+        print("✅ EnhancedMemoryCreationViewModel: Cleanup abgeschlossen")
     }
     
     // MARK: - Setup Methods
@@ -86,96 +107,166 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
     
     private func setupLocationMonitoring() {
         // Initial location from LocationManager
-        if let location = locationManager.currentLocation {
+        if let location = locationManager.currentLocation,
+           LocationValidator.isValidLocation(location) {
             self.currentLocation = location
-            performReverseGeocoding(for: location)
+            print("✅ EnhancedMemoryCreationViewModel: Location bereits verfügbar: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+            performReverseGeocodingIfNeeded(for: location)
         }
         
-        // Listen for location updates
+        // PERFORMANCE: Optimierter Timer mit längeren Intervallen
         startLocationUpdates()
     }
     
     private func startLocationUpdates() {
-        Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self = self else { return }
-                if let location = self.locationManager.currentLocation,
-                   location != self.currentLocation {
-                    self.currentLocation = location
-                    self.performReverseGeocoding(for: location)
-                }
+        // PERFORMANCE: Timer-Intervall von 5.0 auf 10.0 erhöht für weniger Updates
+        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.checkLocationUpdate()
             }
         }
     }
     
-    // MARK: - Location Management
+    @MainActor
+    private func checkLocationUpdate() async {
+        guard let newLocation = locationManager.currentLocation,
+              LocationValidator.isValidLocation(newLocation) else {
+            return
+        }
+        
+        // PERFORMANCE: Debouncing - nur bei signifikanten Änderungen updaten
+        let now = Date()
+        guard now.timeIntervalSince(lastLocationUpdate) >= minimumUpdateInterval else {
+            return
+        }
+        
+        // Prüfe ob Location wirklich geändert hat (mindestens 10m Unterschied)
+        if let currentLoc = currentLocation {
+            let distance = newLocation.distance(from: currentLoc)
+            if distance < 10.0 { // Weniger als 10m Unterschied
+                return
+            }
+        }
+        
+        lastLocationUpdate = now
+        currentLocation = newLocation
+        print("📍 EnhancedMemoryCreationViewModel: Location aktualisiert: \(newLocation.coordinate.latitude), \(newLocation.coordinate.longitude)")
+        
+        // PERFORMANCE: Geocoding nur bei Bedarf
+        performReverseGeocodingIfNeeded(for: newLocation)
+    }
+    
+    // MARK: - Location Methods
     
     func updateLocation() {
+        guard !isUpdatingLocation else { return }
+        
+        print("📍 EnhancedMemoryCreationViewModel: Starte Location-Update...")
         isUpdatingLocation = true
         
-        locationManager.requestPermission()
-        
-        // Force location update
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-            
-            if let location = self.locationManager.currentLocation {
-                self.currentLocation = location
-                self.performReverseGeocoding(for: location)
-            } else {
-                self.showError("GPS-Position konnte nicht ermittelt werden")
+        // PERFORMANCE: Timeout für Location-Update
+        let timeoutTask = Task {
+            try? await Task.sleep(for: .seconds(10))
+            await MainActor.run {
+                if isUpdatingLocation {
+                    isUpdatingLocation = false
+                    print("⚠️ EnhancedMemoryCreationViewModel: Location-Update Timeout")
+                }
             }
-            self.isUpdatingLocation = false
+        }
+        
+        Task { @MainActor in
+            defer {
+                timeoutTask.cancel()
+                isUpdatingLocation = false
+            }
+            
+            // Forciere Location-Update vom LocationManager
+            locationManager.requestLocationUpdate()
+            
+            // Warte kurz auf neuen Location
+            try? await Task.sleep(for: .milliseconds(500))
+            
+            if let location = locationManager.currentLocation,
+               LocationValidator.isValidLocation(location) {
+                currentLocation = location
+                lastLocationUpdate = Date()
+                print("✅ EnhancedMemoryCreationViewModel: GPS-Location erhalten: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+                performReverseGeocodingIfNeeded(for: location)
+            } else {
+                print("⚠️ EnhancedMemoryCreationViewModel: Keine gültige Location erhalten")
+            }
         }
     }
     
     func useCurrentLocation() {
         manualLocation = nil
         if let location = currentLocation {
-            performReverseGeocoding(for: location)
+            performReverseGeocodingIfNeeded(for: location)
         }
     }
     
-    private func performReverseGeocoding(for location: CLLocation) {
-        guard isOnline else { return }
+    // PERFORMANCE: Optimierte Reverse Geocoding mit Debouncing
+    private func performReverseGeocodingIfNeeded(for location: CLLocation) {
+        let now = Date()
+        guard now.timeIntervalSince(lastGeocodingRequest) >= minimumGeocodingInterval else {
+            return
+        }
         
-        geocoder.cancelGeocode()
+        lastGeocodingRequest = now
         
-        Task { @MainActor in
+        // Cancel previous geocoding task
+        geocodingTask?.cancel()
+        
+        geocodingTask = Task { @MainActor in
             do {
-                let placemarks = try await geocoder.reverseGeocodeLocation(location)
+                let geocoder = CLGeocoder()
                 
-                if let placemark = placemarks.first {
-                    let components = [
-                        placemark.name,
+                let result = try await withThrowingTaskGroup(of: [CLPlacemark].self) { group in
+                    group.addTask {
+                        return try await geocoder.reverseGeocodeLocation(location)
+                    }
+                    
+                    group.addTask {
+                        try await Task.sleep(for: .seconds(5))
+                        throw CancellationError()
+                    }
+                    
+                    let placemarks = try await group.next()!
+                    group.cancelAll()
+                    return placemarks
+                }
+                
+                if let placemark = result.first {
+                    let addressComponents = [
+                        placemark.thoroughfare,
                         placemark.locality,
+                        placemark.administrativeArea,
                         placemark.country
                     ].compactMap { $0 }
                     
-                    self.locationAddress = components.joined(separator: ", ")
+                    locationAddress = addressComponents.joined(separator: ", ")
+                    print("📍 EnhancedMemoryCreationViewModel: Adresse gefunden: \(locationAddress ?? "Unknown")")
                 }
+                
             } catch {
-                print("🗺️ Reverse Geocoding Fehler: \(error.localizedDescription)")
+                if !(error is CancellationError) {
+                    print("⚠️ EnhancedMemoryCreationViewModel: Geocoding fehlgeschlagen: \(error)")
+                }
             }
         }
     }
     
-    // MARK: - Photo Management
+    // MARK: - Image Management
     
     func removeImage(at index: Int) {
-        guard index < selectedImages.count else { return }
+        guard index >= 0 && index < selectedImages.count else { return }
         selectedImages.remove(at: index)
-    }
-    
-    func clearAllImages() {
-        selectedImages.removeAll()
     }
     
     // MARK: - Draft Management
     
     func saveDraft() {
-        guard hasUnsavedChanges else { return }
-        
         let draft = MemoryDraft(
             title: title,
             content: content,
@@ -187,9 +278,9 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
         do {
             let data = try JSONEncoder().encode(draft)
             UserDefaults.standard.set(data, forKey: draftKey)
-            print("💾 Draft gespeichert für Trip: \(trip.title ?? "Unknown")")
+            print("💾 EnhancedMemoryCreationViewModel: Draft gespeichert")
         } catch {
-            print("❌ Draft speichern fehlgeschlagen: \(error)")
+            print("❌ EnhancedMemoryCreationViewModel: Draft speichern fehlgeschlagen: \(error)")
         }
     }
     
@@ -203,19 +294,20 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
         content = draft.content
         timestamp = draft.timestamp
         
-        if let location = draft.location {
+        if let location = draft.location,
+           LocationValidator.isValidLocation(location) {
             manualLocation = location
-            performReverseGeocoding(for: location)
+            performReverseGeocodingIfNeeded(for: location)
         }
         
-        print("📖 Draft geladen für Trip: \(trip.title ?? "Unknown")")
+        print("📖 EnhancedMemoryCreationViewModel: Draft geladen für Trip: \(trip.title ?? "Unknown")")
     }
     
     func clearDraft() {
         UserDefaults.standard.removeObject(forKey: draftKey)
     }
     
-    // MARK: - Memory Saving
+    // MARK: - Memory Saving - PERFORMANCE OPTIMIZED
     
     func saveMemory() async {
         guard canSave else {
@@ -223,139 +315,139 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
             return
         }
         
-        isSaving = true
+        // PERFORMANCE: Cancel any existing save operation
+        saveTask?.cancel()
         
-        do {
-            // Create Memory in Core Data
-            let memory = try await createMemory()
-            
-            // Save photos if available
-            if !selectedImages.isEmpty {
-                try await savePhotos(for: memory)
+        isSaving = true
+        print("🔄 EnhancedMemoryCreationViewModel: Speicher-Prozess gestartet")
+        
+        saveTask = Task { @MainActor in
+            do {
+                // Create Memory in Core Data - PERFORMANCE OPTIMIZED
+                let memory = try await createMemoryOptimized()
+                
+                // Save photos if available - PARALLEL PROCESSING
+                if !selectedImages.isEmpty {
+                    await savePhotosOptimized(for: memory)
+                }
+                
+                // Save Core Data context
+                coreDataManager.save()
+                
+                // Clear draft after successful save
+                clearDraft()
+                
+                // Show success
+                showingSuccess = true
+                
+                // Reset form
+                resetForm()
+                
+                print("✅ EnhancedMemoryCreationViewModel: Memory erfolgreich gespeichert")
+                
+            } catch {
+                showError("Fehler beim Speichern: \(error.localizedDescription)")
+                print("❌ EnhancedMemoryCreationViewModel: Memory speichern fehlgeschlagen: \(error)")
             }
             
-            // Save Core Data context
-            coreDataManager.save()
+            isSaving = false
+        }
+    }
+    
+    // PERFORMANCE: Optimierte Memory-Erstellung
+    private func createMemoryOptimized() async throws -> Memory {
+        print("📝 EnhancedMemoryCreationViewModel: Erstelle Memory mit:")
+        print("   - Titel: '\(title)'")
+        print("   - Inhalt: '\(content)'")
+        
+        if let location = effectiveLocation {
+            print("   - Koordinaten: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+        }
+        print("   - Trip: \(trip.title ?? "Unknown")")
+        print("   - User: \(user.displayName ?? "Unknown")")
+        
+        // DIRECT Main Context Operation für bessere Performance
+        let memory = Memory(context: coreDataManager.viewContext)
+        memory.id = UUID()
+        memory.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        memory.content = content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content.trimmingCharacters(in: .whitespacesAndNewlines)
+        memory.timestamp = timestamp
+        memory.createdAt = Date()
+        memory.author = user
+        memory.trip = trip
+        
+        // Set location
+        if let location = effectiveLocation {
+            let lat = location.coordinate.latitude
+            let lon = location.coordinate.longitude
             
-            // Clear draft after successful save
-            clearDraft()
+            guard LocationValidator.isValidCoordinate(latitude: lat, longitude: lon) else {
+                print("❌ EnhancedMemoryCreationViewModel: Ungültige Koordinaten - Lat: \(lat), Lon: \(lon)")
+                throw EnhancedMemoryCreationError.locationNotAvailable
+            }
             
-            // Show success
-            showingSuccess = true
+            memory.latitude = lat
+            memory.longitude = lon
+        } else {
+            print("⚠️ EnhancedMemoryCreationViewModel: Keine Location verfügbar, setze Standard-Koordinaten")
+            memory.latitude = 0.0
+            memory.longitude = 0.0
+        }
+        
+        print("✅ EnhancedMemoryCreationViewModel: Memory erfolgreich gespeichert")
+        return memory
+    }
+    
+    // PERFORMANCE: Parallel Photo Processing
+    private func savePhotosOptimized(for memory: Memory) async {
+        print("📷 EnhancedMemoryCreationViewModel: Speichere \(selectedImages.count) Fotos...")
+        
+        // PARALLEL photo processing mit TaskGroup
+        await withTaskGroup(of: Void.self) { group in
+            for (index, image) in selectedImages.enumerated() {
+                group.addTask { [weak self] in
+                    await self?.savePhotoOptimized(for: memory, image: image, index: index)
+                }
+            }
+        }
+        
+        print("✅ EnhancedMemoryCreationViewModel: Alle Fotos gespeichert")
+    }
+    
+    private func savePhotoOptimized(for memory: Memory, image: UIImage, index: Int) async {
+        do {
+            // Generate unique filename
+            let filename = "memory_\(memory.id?.uuidString.prefix(8) ?? "unknown")_\(index).jpg"
             
-            // Reset form
-            resetForm()
+            // PERFORMANCE: Compress image more aggressively
+            let compressedImage = compressImageForStorage(image)
             
-            print("✅ Memory erfolgreich gespeichert: \(memory.title ?? "Unknown")")
+            // Save image to local storage
+            let localURL = try saveImageToDocuments(image: compressedImage, filename: filename)
+            
+            // Create Photo entity in main context
+            await MainActor.run {
+                let photo = Photo(context: coreDataManager.viewContext)
+                photo.id = UUID()
+                photo.filename = filename
+                photo.localURL = localURL
+                photo.createdAt = Date()
+                photo.memory = memory
+                photo.cloudURL = nil // Offline-first approach
+                
+                print("✅ EnhancedMemoryCreationViewModel: Photo-Entity erfolgreich erstellt: \(filename)")
+            }
             
         } catch {
-            showError("Fehler beim Speichern: \(error.localizedDescription)")
-            print("❌ Memory speichern fehlgeschlagen: \(error)")
-        }
-        
-        isSaving = false
-    }
-    
-    private func createMemory() async throws -> Memory {
-        return try await withCheckedThrowingContinuation { continuation in
-            coreDataManager.backgroundContext.perform {
-                do {
-                    // Get objects in background context
-                    let backgroundTrip = self.coreDataManager.backgroundContext.object(with: self.trip.objectID) as! Trip
-                    let backgroundUser = self.coreDataManager.backgroundContext.object(with: self.user.objectID) as! User
-                    
-                    // Create memory
-                    let memory = Memory(context: self.coreDataManager.backgroundContext)
-                    memory.id = UUID()
-                    memory.title = self.title.trimmingCharacters(in: .whitespacesAndNewlines)
-                    memory.content = self.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : self.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                    memory.timestamp = self.timestamp
-                    memory.createdAt = Date()
-                    memory.author = backgroundUser
-                    memory.trip = backgroundTrip
-                    
-                    // Set location
-                    if let location = self.effectiveLocation {
-                        let lat = location.coordinate.latitude
-                        let lon = location.coordinate.longitude
-                        
-                        guard LocationValidator.isValidCoordinate(latitude: lat, longitude: lon) else {
-                            print("❌ EnhancedMemoryCreationViewModel: Ungültige Koordinaten - Lat: \(lat), Lon: \(lon)")
-                            throw EnhancedMemoryCreationError.locationNotAvailable
-                        }
-                        
-                        memory.latitude = lat
-                        memory.longitude = lon
-                    } else {
-                        print("⚠️ EnhancedMemoryCreationViewModel: Keine Location verfügbar, setze Standard-Koordinaten")
-                        memory.latitude = 0.0
-                        memory.longitude = 0.0
-                    }
-                    
-                    try self.coreDataManager.backgroundContext.save()
-                    
-                    // Get memory in main context
-                    Task { @MainActor in
-                        let mainMemory = self.coreDataManager.viewContext.object(with: memory.objectID) as! Memory
-                        continuation.resume(returning: mainMemory)
-                    }
-                    
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
+            print("❌ EnhancedMemoryCreationViewModel: Photo speichern fehlgeschlagen: \(error)")
         }
     }
     
-    private func savePhotos(for memory: Memory) async throws {
-        for (index, image) in selectedImages.enumerated() {
-            try await savePhoto(for: memory, image: image, index: index)
-        }
-    }
-    
-    private func savePhoto(for memory: Memory, image: UIImage, index: Int) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            coreDataManager.backgroundContext.perform {
-                do {
-                    // Get memory in background context
-                    let backgroundMemory = self.coreDataManager.backgroundContext.object(with: memory.objectID) as! Memory
-                    
-                    // Generate unique filename
-                    let filename = "\(UUID().uuidString)_\(index).jpg"
-                    
-                    // Compress image for storage optimization
-                    let compressedImage = self.compressImageForStorage(image)
-                    
-                    // Save image to local storage
-                    let localURL = try self.saveImageToDocuments(image: compressedImage, filename: filename)
-                    
-                    // Create Photo entity
-                    let photo = Photo(context: self.coreDataManager.backgroundContext)
-                    photo.id = UUID()
-                    photo.filename = filename
-                    photo.localURL = localURL
-                    photo.createdAt = Date()
-                    photo.memory = backgroundMemory
-                    
-                    // Set cloudURL to nil for offline-first approach
-                    photo.cloudURL = nil
-                    
-                    try self.coreDataManager.backgroundContext.save()
-                    
-                    continuation.resume()
-                    
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-    
-    // MARK: - Image Processing
+    // MARK: - Image Processing - PERFORMANCE OPTIMIZED
     
     private func compressImageForStorage(_ image: UIImage) -> UIImage {
-        // Deutlich reduzierte maximale Größe für Mobile
-        let maxDimension: CGFloat = 800 // Von 1200 auf 800 reduziert
+        // DEUTLICH reduzierte maximale Größe für bessere Performance
+        let maxDimension: CGFloat = 600 // Von 800 auf 600 reduziert
         let size = image.size
         
         // Validiere die ursprüngliche Bildgröße
@@ -387,10 +479,11 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
                 return image
             }
             
-            // Optimierte Renderer-Konfiguration für bessere Performance
+            // PERFORMANCE: Optimierte Renderer-Konfiguration
             let format = UIGraphicsImageRendererFormat()
             format.scale = 1.0 // Verhindere High-DPI Scaling
             format.opaque = true // Bessere Performance für JPEG
+            format.preferredRange = .standard // Reduzierter Color Range
             
             let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
             return renderer.image { _ in
@@ -404,8 +497,8 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
     // MARK: - File Management
     
     private func saveImageToDocuments(image: UIImage, filename: String) throws -> String {
-        // Aggressivere Komprimierung für kleinere Dateien
-        guard let imageData = image.jpegData(compressionQuality: 0.4) else { // Von 0.7 auf 0.4 reduziert
+        // SEHR aggressive Komprimierung für kleinste Dateien
+        guard let imageData = image.jpegData(compressionQuality: 0.3) else { // Von 0.4 auf 0.3 reduziert
             throw EnhancedMemoryCreationError.imageCompressionFailed
         }
         

@@ -148,32 +148,14 @@ struct LocationManagerExample: View {
     // MARK: - Methods
     
     private func setupExampleData() {
-        // Beispiel-User erstellen oder laden
+        // Prüfe ob bereits User vorhanden sind - keine automatische Erstellung
         let users = CoreDataManager.shared.fetchAllUsers()
         if let existingUser = users.first {
             currentUser = existingUser
-        } else {
-            currentUser = CoreDataManager.shared.createUser(
-                email: "test@example.com",
-                displayName: "Test User"
-            )
-            CoreDataManager.shared.save()
+            // Aktiven Trip laden falls vorhanden
+            activeTrip = CoreDataManager.shared.fetchActiveTrip(for: existingUser)
         }
-        
-        // Aktiven Trip laden oder erstellen
-        if let user = currentUser {
-            activeTrip = CoreDataManager.shared.fetchActiveTrip(for: user)
-            
-            if activeTrip == nil {
-                activeTrip = CoreDataManager.shared.createTrip(
-                    title: "Test Reise",
-                    description: "Beispiel-Reise für GPS Testing",
-                    startDate: Date(),
-                    owner: user
-                )
-                CoreDataManager.shared.setTripActive(activeTrip!, isActive: true)
-            }
-        }
+        // Wenn keine Daten vorhanden sind, bleibt alles nil - User muss manuell Daten erstellen
     }
     
     private func startTracking() {

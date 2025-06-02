@@ -2,80 +2,61 @@ import SwiftUI
 import PhotosUI
 import CoreLocation
 
+/// View für die Erstellung neuer Memories
+/// Bietet vollständiges Interface mit Location, Photos und Text-Input
 struct MemoryCreationView: View {
     @StateObject private var viewModel = MemoryCreationViewModel()
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var userManager: UserManager
+    
+    // UI State
     @FocusState private var titleFieldFocused: Bool
     @FocusState private var descriptionFieldFocused: Bool
+    @State private var showingTripCreation = false
+    @State private var showingUserCreation = false // Neue State für User-Erstellung
     
     var body: some View {
         NavigationView {
             ScrollView {
-                LazyVStack(spacing: 20) {
-                    // Header
+                VStack(spacing: 20) {
                     headerSection
                     
-                    // Form Content
+                    // Trip Info (falls vorhanden)
+                    if let trip = viewModel.trip {
+                        tripInfoSection(for: trip)
+                    }
+                    
                     VStack(spacing: 16) {
-                        // Trip Info (falls vorhanden)
-                        if let trip = viewModel.trip {
-                            tripInfoSection(for: trip)
-                        }
-                        
-                        // Titel Input
                         titleSection
-                        
-                        // Beschreibung Input
                         descriptionSection
-                        
-                        // GPS Koordinaten
                         locationSection
-                        
-                        // Foto Sektion
                         photoSection
-                        
-                        // Speichern Button
-                        saveButton
                     }
                     .padding(.horizontal)
                 }
             }
-            .navigationTitle("Neue Erinnerung")
-            .navigationBarTitleDisplayMode(.large)
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle("Memory erstellen")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Abbrechen") {
                         dismiss()
                     }
+                    .foregroundColor(.red)
                 }
-            }
-            .dismissKeyboardOnTap()
-            .customKeyboardToolbar {
-                HStack {
-                    Spacer()
-                    Button("Fertig") {
-                        hideKeyboard()
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Speichern") {
+                        Task {
+                            await viewModel.saveMemory()
+                        }
                     }
-                    .font(.headline)
-                    .foregroundColor(.blue)
+                    .disabled(!viewModel.canSave || viewModel.isSaving)
+                    .fontWeight(.semibold)
                 }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
             }
-            .sheet(isPresented: $viewModel.showingImagePicker) {
-                ImagePickerView(
-                    sourceType: viewModel.imageSourceType,
-                    selectedImage: $viewModel.selectedImage
-                )
-                .interactiveDismissDisabled(viewModel.isSaving)
-            }
-            .photosPicker(
-                isPresented: $viewModel.showingPhotoPicker,
-                selection: $viewModel.photoPickerItem,
-                matching: .images
-            )
             .onChange(of: viewModel.photoPickerItem) { _, _ in
                 viewModel.loadSelectedPhoto()
             }
@@ -92,9 +73,41 @@ struct MemoryCreationView: View {
                 Text("Memory wurde erfolgreich gespeichert!")
             }
             .alert("Keine aktive Reise", isPresented: $viewModel.showingNoTripAlert) {
-                Button("OK") { }
+                Button("Reise erstellen") {
+                    // Prüfe erst, ob ein User vorhanden ist
+                    if userManager.currentUser == nil {
+                        showingUserCreation = true
+                    } else {
+                        showingTripCreation = true
+                    }
+                }
+                Button("Abbrechen") {
+                    dismiss()
+                }
             } message: {
-                Text("Bitte erstelle zuerst eine Reise oder setze eine Reise als aktiv.")
+                Text(userManager.currentUser == nil 
+                     ? "Um Memories zu erstellen, benötigst du zunächst ein Benutzerprofil und eine aktive Reise. Möchtest du jetzt einen Benutzer erstellen?"
+                     : "Sie benötigen eine aktive Reise um Memories zu erstellen. Möchten Sie jetzt eine neue Reise erstellen?")
+            }
+            .sheet(isPresented: $showingUserCreation) {
+                UserCreationView {
+                    // Nach User-Erstellung automatisch TripCreation öffnen
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showingTripCreation = true
+                    }
+                }
+                .environmentObject(userManager)
+            }
+            .sheet(isPresented: $showingTripCreation) {
+                TripCreationView()
+                    .environmentObject(TripManager.shared)
+                    .environmentObject(userManager)
+                    .onDisappear {
+                        // Nach Reise-Erstellung prüfen ob jetzt eine Reise verfügbar ist
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            viewModel.setupInitialData()
+                        }
+                    }
             }
         }
         .onAppear {
@@ -214,7 +227,9 @@ struct MemoryCreationView: View {
                 
                 Button("Aktualisieren") {
                     if !viewModel.isUpdatingLocation {
-                        viewModel.updateLocation()
+                        Task {
+                            await viewModel.updateLocation()
+                        }
                     }
                 }
                 .font(.caption)
@@ -295,33 +310,6 @@ struct MemoryCreationView: View {
         }
     }
     
-    private var saveButton: some View {
-        Button(action: {
-            Task {
-                await viewModel.saveMemory()
-            }
-        }) {
-            HStack {
-                if viewModel.isSaving {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .foregroundColor(.white)
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                }
-                Text(viewModel.isSaving ? "Speichert..." : "Memory speichern")
-            }
-            .font(.headline)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(viewModel.canSave ? Color.blue : Color.gray)
-            .cornerRadius(12)
-        }
-        .disabled(!viewModel.canSave || viewModel.isSaving)
-        .padding(.top)
-    }
-    
     // MARK: - Helper Methods
     
     private func hideKeyboard() {
@@ -334,13 +322,7 @@ struct MemoryCreationView: View {
 // MARK: - Preview
 struct MemoryCreationView_Previews: PreviewProvider {
     static var previews: some View {
-        // Create sample context with data for preview
-        let previewContext = PersistenceController.preview.container.viewContext
-        
-        // Ensure sample data exists
-        let _ = SampleDataCreator.createSampleData(in: previewContext)
-        
         return MemoryCreationView()
-            .environment(\.managedObjectContext, previewContext)
+            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 } 

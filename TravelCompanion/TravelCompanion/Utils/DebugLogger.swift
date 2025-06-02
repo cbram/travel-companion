@@ -346,7 +346,24 @@ class DebugLogger: ObservableObject {
     }
     
     func logResultAccumulatorTimeout(operation: String, timeout: TimeInterval) {
+        // PERFORMANCE-OPTIMIERUNG: Verhindere log-flooding
+        let key = "lastTimeoutLog_\(operation)"
+        let lastLogTime = UserDefaults.standard.double(forKey: key)
+        let now = Date().timeIntervalSince1970
+        
+        // Nur alle 10 Sekunden für die gleiche Operation loggen
+        guard now - lastLogTime > 10.0 else { return }
+        
+        UserDefaults.standard.set(now, forKey: key)
         warning("⏰ Result Accumulator Timeout: \(operation) - \(String(format: "%.3f", timeout))s")
+        
+        // Prüfe auf wiederholte Timeouts
+        let timeoutCount = UserDefaults.standard.integer(forKey: "timeoutCount_\(operation)") + 1
+        UserDefaults.standard.set(timeoutCount, forKey: "timeoutCount_\(operation)")
+        
+        if timeoutCount > 5 {
+            error("🚨 KRITISCH: \(timeoutCount) Timeouts für '\(operation)' - mögliche Endlosschleife!")
+        }
     }
     
     func logFrameDimensionError(view: String, width: CGFloat, height: CGFloat) {
@@ -360,6 +377,15 @@ class DebugLogger: ObservableObject {
     // MARK: - Performance Warning Detection
     
     func checkPerformanceWarnings() {
+        // OPTIMIERT: Reduziere Performance-Checks
+        let now = Date()
+        if let lastCheck = UserDefaults.standard.object(forKey: "lastPerformanceCheck") as? Date,
+           now.timeIntervalSince(lastCheck) < 30.0 { // Max alle 30 Sekunden
+            return
+        }
+        
+        UserDefaults.standard.set(now, forKey: "lastPerformanceCheck")
+        
         // Check for recent timeouts
         let recentTimeouts = performanceMetrics.filter { metric in
             metric.name.contains("timeout") && 
@@ -368,6 +394,14 @@ class DebugLogger: ObservableObject {
         
         if recentTimeouts.count > 5 {
             warning("🚨 Performance Warning: \(recentTimeouts.count) timeouts in der letzten Minute")
+            
+            // Reset timeout counters nach Warnung
+            DispatchQueue.global(qos: .background).async {
+                let keys = UserDefaults.standard.dictionaryRepresentation().keys
+                for key in keys where key.hasPrefix("timeoutCount_") {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+            }
         }
         
         // Check for UI blocking

@@ -32,6 +32,11 @@ extension CLLocation {
     
     /// Formatierte Genauigkeits-Information
     var accuracyDescription: String {
+        // SICHERE NaN-Behandlung für UI
+        guard horizontalAccuracy.isFinite else {
+            return "Unbekannt"
+        }
+        
         if horizontalAccuracy < 0 {
             return "Unbekannt"
         } else if horizontalAccuracy <= 5 {
@@ -59,5 +64,31 @@ extension CLLocation {
     /// Prüft ob Location signifikant von anderer abweicht
     func isSignificantlyDifferent(from location: CLLocation, threshold: CLLocationDistance = 50) -> Bool {
         return self.distance(from: location) > threshold
+    }
+    
+    /// NEUE EIGENSCHAFT: Sichere formatierte Koordinaten für UI
+    var safeFormattedCoordinates: String {
+        guard coordinate.latitude.isFinite && coordinate.longitude.isFinite else {
+            return "Ungültige Koordinaten"
+        }
+        
+        return LocationValidator.formatCoordinates(
+            latitude: coordinate.latitude, 
+            longitude: coordinate.longitude, 
+            precision: 6
+        )
+    }
+    
+    /// NEUE EIGENSCHAFT: Sichere kurze Koordinaten für UI  
+    var safeShortCoordinates: String {
+        guard coordinate.latitude.isFinite && coordinate.longitude.isFinite else {
+            return "N/A"
+        }
+        
+        return LocationValidator.formatCoordinates(
+            latitude: coordinate.latitude, 
+            longitude: coordinate.longitude, 
+            precision: 3
+        )
     }
 } 

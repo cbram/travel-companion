@@ -14,16 +14,25 @@ struct TravelCompanionApp: App {
     let persistenceController = PersistenceController.shared
     @StateObject private var locationManager = LocationManager.shared
     @StateObject private var appStateManager = AppStateManager.shared
+    @StateObject private var debugLogger = DebugLogger.shared
+    @StateObject private var photoFileManager = PhotoFileManager.shared
+    @StateObject private var offlineMemoryCreator = OfflineMemoryCreator.shared
+    @StateObject private var userManager = UserManager.shared
+    @StateObject private var authenticationState = AuthenticationState.shared
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AuthenticatedApp()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(TripManager.shared)
-                .environmentObject(UserManager.shared)
+                .environmentObject(userManager)
+                .environmentObject(authenticationState)
                 .environmentObject(locationManager)
                 .environmentObject(appStateManager)
+                .environmentObject(debugLogger)
+                .environmentObject(photoFileManager)
+                .environmentObject(offlineMemoryCreator)
                 .onAppear {
                     // App-Setup beim ersten Start
                     setupApp()
@@ -54,6 +63,8 @@ struct TravelCompanionApp: App {
                     switch newPhase {
                     case .active:
                         appStateManager.handleAppDidBecomeActive()
+                        // Überprüfe Authentifizierungsstatus beim Aktivieren
+                        authenticationState.checkAuthenticationStatus()
                     case .inactive:
                         appStateManager.handleAppWillResignActive()
                     case .background:
@@ -75,10 +86,14 @@ struct TravelCompanionApp: App {
         // User Notifications Setup
         appStateManager.requestNotificationPermission()
         
+        // Authentifizierungsstatus überprüfen
+        authenticationState.checkAuthenticationStatus()
+        
         // Debug Logging aktivieren in Development
         #if DEBUG
         DebugLogger.shared.logLevel = .verbose
         DebugLogger.shared.log("🚀 TravelCompanion App gestartet - Debug Mode aktiv")
+        DebugLogger.shared.log("👤 UserManager Status: \(userManager.currentUser?.formattedDisplayName ?? "Kein User")")
         #endif
     }
 }

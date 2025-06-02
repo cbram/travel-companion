@@ -136,20 +136,64 @@ extension User {
         return Array(memoriesArray.prefix(limit))
     }
     
-    /// Erstellt oder holt den Default User
+    /// ROBUSTE Erstelle oder holt den Default User - ENHANCED VERSION
     static func fetchOrCreateDefaultUser(in context: NSManagedObjectContext) -> User {
+        // SCHRITT 1: Versuche existierenden aktiven User zu finden
         let request = User.fetchRequest()
-        request.predicate = NSPredicate(format: "isActive == true")
+        request.predicate = NSPredicate(format: "isActive == true AND email == %@", "default@travelcompanion.com")
         request.sortDescriptors = [NSSortDescriptor(keyPath: \User.createdAt, ascending: true)]
         request.fetchLimit = 1
+        request.returnsObjectsAsFaults = false // Eager loading für bessere Performance
         
         do {
             let users = try context.fetch(request)
             if let existingUser = users.first {
-                return existingUser
+                // ERWEITERTE Validierung des existierenden Users
+                guard !existingUser.isDeleted,
+                      let userContext = existingUser.managedObjectContext,
+                      userContext == context else {
+                    print("⚠️ User: Existierender User ist ungültig oder in falschem Context, erstelle neuen...")
+                    // Bereinige ungültigen User
+                    if !existingUser.isDeleted {
+                        context.delete(existingUser)
+                    }
+                    return createNewDefaultUser(in: context)
+                }
+                
+                // STORE-VALIDIERUNG für existierenden User
+                do {
+                    _ = try context.existingObject(with: existingUser.objectID)
+                    print("✅ User: Existierender Default User erfolgreich validiert: \(existingUser.formattedDisplayName)")
+                    return existingUser
+                } catch {
+                    print("⚠️ User: Existierender User nicht im Store validierbar: \(error)")
+                    return createNewDefaultUser(in: context)
+                }
             }
         } catch {
-            print("❌ User: Fehler beim Laden des Default Users: \(error)")
+            print("❌ User: Fehler beim Suchen des Default Users: \(error)")
+        }
+        
+        // SCHRITT 2: Kein gültiger User gefunden - erstelle neuen
+        return createNewDefaultUser(in: context)
+    }
+    
+    /// NEUE Helper-Methode: Erstellt einen neuen Default User mit vollständiger Validierung
+    private static func createNewDefaultUser(in context: NSManagedObjectContext) -> User {
+        print("🔄 User: Erstelle neuen Default User...")
+        
+        // Bereinige alle alten Default-User vor der Neuerstellung
+        let cleanupRequest = User.fetchRequest()
+        cleanupRequest.predicate = NSPredicate(format: "email == %@", "default@travelcompanion.com")
+        
+        do {
+            let oldUsers = try context.fetch(cleanupRequest)
+            for oldUser in oldUsers {
+                print("🗑️ User: Entferne alten Default User: \(oldUser.formattedDisplayName)")
+                context.delete(oldUser)
+            }
+        } catch {
+            print("⚠️ User: Fehler beim Bereinigen alter Default Users: \(error)")
         }
         
         // Erstelle neuen Default User
@@ -160,6 +204,51 @@ extension User {
         newUser.createdAt = Date()
         newUser.isActive = true
         
-        return newUser
+        // KRITISCHER PUNKT: SOFORT speichern mit mehrfacher Validierung
+        do {
+            // Erst Context-Validierung
+            guard context.insertedObjects.contains(newUser) else {
+                throw NSError(domain: "UserCreation", code: 1, userInfo: [NSLocalizedDescriptionKey: "User nicht im Context eingefügt"])
+            }
+            
+            // Context-Save
+            try context.save()
+            
+            // POST-SAVE Validierung: Prüfe dass User wirklich im Store ist
+            let verifyRequest = User.fetchRequest()
+            verifyRequest.predicate = NSPredicate(format: "id == %@", newUser.id! as CVarArg)
+            verifyRequest.fetchLimit = 1
+            
+            let verifyUsers = try context.fetch(verifyRequest)
+            guard let verifiedUser = verifyUsers.first,
+                  verifiedUser.objectID == newUser.objectID else {
+                throw NSError(domain: "UserCreation", code: 2, userInfo: [NSLocalizedDescriptionKey: "User nach Save nicht im Store gefunden"])
+            }
+            
+            print("✅ User: Neuer Default User erfolgreich erstellt und validiert: \(newUser.formattedDisplayName)")
+            return newUser
+            
+        } catch {
+            print("❌ User: KRITISCHER FEHLER beim Erstellen des Default Users: \(error)")
+            
+            // FALLBACK: Versuche minimalen User zu erstellen
+            let fallbackUser = User(context: context)
+            fallbackUser.id = UUID()
+            fallbackUser.email = "fallback@travelcompanion.com"
+            fallbackUser.displayName = "Emergency User"
+            fallbackUser.createdAt = Date()
+            fallbackUser.isActive = true
+            
+            // Versuche Fallback-Save (ohne weitere Validierung um Endlos-Loop zu vermeiden)
+            do {
+                try context.save()
+                print("⚠️ User: Fallback User erstellt")
+                return fallbackUser
+            } catch {
+                print("❌ User: FATALER FEHLER - Auch Fallback User konnte nicht erstellt werden: \(error)")
+                // Rückgabe des nicht-gespeicherten Users als letzte Option
+                return fallbackUser
+            }
+        }
     }
 } 

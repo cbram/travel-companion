@@ -5,7 +5,11 @@ import SwiftUI
 struct TripCreationView: View {
     @StateObject private var viewModel = TripCreationViewModel()
     @EnvironmentObject private var tripManager: TripManager
+    @EnvironmentObject private var userManager: UserManager
     @Environment(\.dismiss) private var dismiss
+    
+    // Neue State für User-Erstellung
+    @State private var showingUserCreation = false
     
     var body: some View {
         NavigationView {
@@ -88,8 +92,16 @@ struct TripCreationView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Erstellen") {
-                        viewModel.createTrip(using: tripManager) {
-                            dismiss()
+                        viewModel.createTrip(using: tripManager) { result in
+                            switch result {
+                            case .success:
+                                dismiss()
+                            case .noUserAvailable:
+                                showingUserCreation = true
+                            case .userValidationFailed, .saveFailed, .validationFailed:
+                                // Andere Fehler werden durch das ViewModel behandelt
+                                break
+                            }
                         }
                     }
                     .disabled(!viewModel.isValid)
@@ -100,6 +112,19 @@ struct TripCreationView: View {
                 Button("OK") { }
             } message: {
                 Text(viewModel.errorMessage)
+            }
+            .sheet(isPresented: $showingUserCreation) {
+                UserCreationView {
+                    // Nach User-Erstellung automatisch Trip erstellen
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        viewModel.createTrip(using: tripManager) { result in
+                            if case .success = result {
+                                dismiss()
+                            }
+                        }
+                    }
+                }
+                .environmentObject(userManager)
             }
             .disabled(viewModel.isCreating)
             .overlay(
@@ -137,9 +162,10 @@ class TripCreationViewModel: ObservableObject {
     }
     
     // MARK: - Trip Creation
-    func createTrip(using tripManager: TripManager, completion: @escaping () -> Void) {
+    func createTrip(using tripManager: TripManager, completion: @escaping (TripCreationResult) -> Void) {
         guard isValid else {
             showError(message: "Bitte geben Sie einen Titel für die Reise ein.")
+            completion(.validationFailed("Titel fehlt"))
             return
         }
         
@@ -151,25 +177,44 @@ class TripCreationViewModel: ObservableObject {
             let trimmedDescription = self.description.trimmingCharacters(in: .whitespacesAndNewlines)
             let finalDescription = trimmedDescription.isEmpty ? nil : trimmedDescription
             
-            guard let newTrip = tripManager.createTrip(
+            let result = tripManager.createTripWithResult(
                 title: self.title,
                 description: finalDescription,
                 startDate: self.startDate
-            ) else {
-                self.showError(message: "Die Reise konnte nicht erstellt werden. Bitte versuchen Sie es erneut.")
+            )
+            
+            switch result {
+            case .success(let trip):
+                // Als aktive Reise setzen wenn gewünscht
+                if self.setAsActive {
+                    tripManager.setActiveTrip(trip)
+                }
+                
                 self.isCreating = false
-                return
+                completion(result)
+                print("✅ TripCreationView: Reise erfolgreich erstellt: \(self.title)")
+                
+            case .noUserAvailable:
+                // Kein Fehler anzeigen, stattdessen UserCreationView öffnen
+                self.isCreating = false
+                completion(result)
+                print("📝 TripCreationView: Kein User vorhanden - öffne User-Erstellung")
+                
+            case .userValidationFailed:
+                self.showError(message: "Benutzer-Validierung fehlgeschlagen. Bitte versuche es erneut.")
+                self.isCreating = false
+                completion(result)
+                
+            case .saveFailed(let errorMessage):
+                self.showError(message: "Fehler beim Speichern: \(errorMessage)")
+                self.isCreating = false
+                completion(result)
+                
+            case .validationFailed(let errorMessage):
+                self.showError(message: "Validierung fehlgeschlagen: \(errorMessage)")
+                self.isCreating = false
+                completion(result)
             }
-            
-            // Als aktive Reise setzen wenn gewünscht
-            if self.setAsActive {
-                tripManager.setActiveTrip(newTrip)
-            }
-            
-            self.isCreating = false
-            completion()
-            
-            print("✅ TripCreationView: Reise erfolgreich erstellt: \(self.title)")
         }
     }
     

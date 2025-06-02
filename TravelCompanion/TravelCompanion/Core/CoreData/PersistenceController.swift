@@ -8,50 +8,7 @@ struct PersistenceController {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
         
-        // Sample Data für Previews erstellen
-        let sampleUser = User(context: viewContext)
-        sampleUser.id = UUID()
-        sampleUser.email = "max@example.com"
-        sampleUser.displayName = "Max Mustermann"
-        sampleUser.createdAt = Date()
-        sampleUser.isActive = true
-        
-        let sampleUser2 = User(context: viewContext)
-        sampleUser2.id = UUID()
-        sampleUser2.email = "anna@example.com"
-        sampleUser2.displayName = "Anna Schmidt"
-        sampleUser2.createdAt = Date()
-        sampleUser2.isActive = true
-        
-        let sampleTrip = Trip(context: viewContext)
-        sampleTrip.id = UUID()
-        sampleTrip.title = "Reise nach Italien"
-        sampleTrip.tripDescription = "Wunderschöne Reise durch die Toskana"
-        sampleTrip.startDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        sampleTrip.endDate = Calendar.current.date(byAdding: .day, value: 3, to: Date())
-        sampleTrip.isActive = true
-        sampleTrip.createdAt = Date()
-        sampleTrip.owner = sampleUser
-        sampleTrip.addToParticipants(sampleUser2)
-        
-        let sampleMemory = Memory(context: viewContext)
-        sampleMemory.id = UUID()
-        sampleMemory.title = "Kolosseum besucht"
-        sampleMemory.content = "Beeindruckende Architektur und Geschichte"
-        sampleMemory.latitude = 41.8902
-        sampleMemory.longitude = 12.4922
-        sampleMemory.timestamp = Date()
-        sampleMemory.createdAt = Date()
-        sampleMemory.author = sampleUser
-        sampleMemory.trip = sampleTrip
-        
-        let samplePhoto = Photo(context: viewContext)
-        samplePhoto.id = UUID()
-        samplePhoto.filename = "kolosseum_01.jpg"
-        samplePhoto.localURL = "/local/photos/kolosseum_01.jpg"
-        samplePhoto.cloudURL = "https://cloud.example.com/photos/kolosseum_01.jpg"
-        samplePhoto.createdAt = Date()
-        samplePhoto.memory = sampleMemory
+        // Keine automatischen Sample-Daten mehr - nur leerer Preview-Context
         
         do {
             try viewContext.save()

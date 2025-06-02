@@ -97,10 +97,8 @@ class LocationManager: NSObject, ObservableObject {
         locationManager.distanceFilter = 10
         authorizationStatus = locationManager.authorizationStatus
         
-        // Request initial location if authorized
-        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
-            locationManager.requestLocation() // Sofortiger Location-Abruf
-        }
+        // ENTFERNT: Sofortiger Location-Abruf verhindert Performance-Probleme
+        // Nur bei expliziter Anfrage Location anfordern
     }
     
     private func setupBatteryMonitoring() {
@@ -265,18 +263,58 @@ class LocationManager: NSObject, ObservableObject {
         // Location-Validierung
         guard isLocationValid(location) else { return }
         
+        // PERFORMANCE-OPTIMIERUNG: Reduziere excessive Updates mit intelligenter Filterung
+        if let lastLocation = currentLocation {
+            let timeSinceLastUpdate = location.timestamp.timeIntervalSince(lastLocation.timestamp)
+            let distance = location.distance(from: lastLocation)
+            
+            // ANGEPASSTE Filter-Logik: Weniger aggressive Updates
+            let minTimeInterval: TimeInterval = isTracking ? 30.0 : 60.0  // 30s beim Tracking, 60s normal
+            let minDistance: CLLocationDistance = isTracking ? 10.0 : 25.0  // 10m beim Tracking, 25m normal
+            
+            // Ignoriere zu häufige Updates mit vernünftigen Schwellwerten
+            if timeSinceLastUpdate < minTimeInterval && distance < minDistance {
+                // AUSNAHME: Bei sehr schlechter Genauigkeit (>100m) weniger strikt filtern
+                guard lastLocation.horizontalAccuracy > 100 || location.horizontalAccuracy > 100 else {
+                    return // Filtere Update aus
+                }
+            }
+            
+            // BATTERIE-OPTIMIERUNG: Bei niedrigem Batteriestand noch strikter filtern
+            if UIDevice.current.batteryLevel < 0.3 && UIDevice.current.batteryState != .charging {
+                if timeSinceLastUpdate < 60.0 && distance < 50.0 {
+                    return
+                }
+            }
+        }
+        
         currentLocation = location
         lastLocationUpdate = Date()
         
-        // Pause-Erkennung zurücksetzen
-        resetPauseDetection()
+        // Pause-Erkennung zurücksetzen nur bei signifikanten Bewegungen
+        if let lastLocation = lastSignificantLocation {
+            let distance = location.distance(from: lastLocation)
+            if distance >= minimumDistanceForUpdate {
+                resetPauseDetection()
+            }
+        } else {
+            resetPauseDetection()
+        }
         
-        // Automatische Memory-Erstellung bei signifikanten Bewegungen
+        // Automatische Memory-Erstellung nur bei wirklich signifikanten Bewegungen
         if shouldCreateAutomaticMemory(for: location) {
             createAutomaticMemory(at: location)
         }
         
-        lastSignificantLocation = location
+        // Update lastSignificantLocation nur bei größeren Bewegungen
+        if let lastLocation = lastSignificantLocation {
+            let distance = location.distance(from: lastLocation)
+            if distance >= minimumDistanceForUpdate {
+                lastSignificantLocation = location
+            }
+        } else {
+            lastSignificantLocation = location
+        }
     }
     
     private func isLocationValid(_ location: CLLocation) -> Bool {
@@ -294,13 +332,30 @@ class LocationManager: NSObject, ObservableObject {
     }
     
     private func shouldCreateAutomaticMemory(for location: CLLocation) -> Bool {
-        guard let lastLocation = lastSignificantLocation else { return true }
+        guard let lastLocation = lastSignificantLocation else { 
+            // Erste Location - nur bei Tracking automatisch speichern
+            return isTracking
+        }
         
         let distance = location.distance(from: lastLocation)
         let timeInterval = location.timestamp.timeIntervalSince(lastLocation.timestamp)
         
-        // Mindestdistanz oder Mindestzeit erreicht
-        return distance >= minimumDistanceForUpdate || timeInterval >= 300 // 5 Minuten
+        // REDUZIERTE Häufigkeit für automatische Memories
+        let minimumDistance: CLLocationDistance = 100 // 100m statt 5m
+        let minimumTime: TimeInterval = 600 // 10 Minuten statt 5 Minuten
+        
+        // BATTERIESTAND-ABHÄNGIGE Anpassung
+        let batteryLevel = UIDevice.current.batteryLevel
+        if batteryLevel < 0.3 && UIDevice.current.batteryState != .charging {
+            // Bei niedrigem Batteriestand sehr restriktiv
+            return distance >= 500 || timeInterval >= 1800 // 500m oder 30 Minuten
+        } else if batteryLevel < 0.6 {
+            // Bei mittlerem Batteriestand moderat restriktiv
+            return distance >= 200 || timeInterval >= 900 // 200m oder 15 Minuten
+        }
+        
+        // Normale Bedingungen
+        return distance >= minimumDistance || timeInterval >= minimumTime
     }
     
     private func createAutomaticMemory(at location: CLLocation) {
@@ -324,42 +379,44 @@ class LocationManager: NSObject, ObservableObject {
     }
     
     private func createMemory(title: String, content: String?, location: CLLocation, trip: Trip, user: User) {
-        // Offline-Speicherung wenn keine Core Data Verbindung
-        if !isConnectedToCoreData() {
-            storePendingMemory(
-                title: title,
-                content: content,
-                location: location,
-                trip: trip,
-                user: user
-            )
-            return
-        }
+        // PERFORMANCE-OPTIMIERUNG: Background Context verwenden
+        let backgroundContext = coreDataManager.backgroundContext
         
-        // Background Context für Performance
-        coreDataManager.performBackgroundTask { context in
-            // Objektreferenzen im Background Context holen
-            guard let bgTrip = context.object(with: trip.objectID) as? Trip,
-                  let bgUser = context.object(with: user.objectID) as? User else {
-                print("❌ LocationManager: Fehler beim Abrufen der Objektreferenzen")
-                return
-            }
+        backgroundContext.perform { [weak self] in
+            guard self != nil else { return }
             
-            let memory = Memory(context: context)
-            memory.id = UUID()
-            memory.title = title
-            memory.content = content
-            memory.latitude = location.coordinate.latitude
-            memory.longitude = location.coordinate.longitude
-            memory.timestamp = location.timestamp
-            memory.createdAt = Date()
-            memory.author = bgUser
-            memory.trip = bgTrip
+            // Trip und User im Background Context finden
+            let tripRequest: NSFetchRequest<Trip> = Trip.fetchRequest()
+            tripRequest.predicate = NSPredicate(format: "id == %@", trip.id! as CVarArg)
+            tripRequest.fetchLimit = 1
             
-            self.coreDataManager.saveContext(context: context)
+            let userRequest: NSFetchRequest<User> = User.fetchRequest()
+            userRequest.predicate = NSPredicate(format: "id == %@", user.id! as CVarArg)
+            userRequest.fetchLimit = 1
             
-            Task { @MainActor in
-                print("📍 LocationManager: Memory '\(title)' erstellt")
+            do {
+                guard let backgroundTrip = try backgroundContext.fetch(tripRequest).first,
+                      let backgroundUser = try backgroundContext.fetch(userRequest).first else {
+                    print("❌ LocationManager: Trip oder User nicht im Background Context gefunden")
+                    return
+                }
+                
+                let memory = Memory(context: backgroundContext)
+                memory.id = UUID()
+                memory.title = title
+                memory.content = content
+                memory.latitude = location.coordinate.latitude
+                memory.longitude = location.coordinate.longitude
+                memory.timestamp = location.timestamp
+                memory.createdAt = Date()
+                memory.author = backgroundUser
+                memory.trip = backgroundTrip
+                
+                try backgroundContext.save()
+                print("✅ LocationManager: Automatische Memory erstellt: '\(title)'")
+                
+            } catch {
+                print("❌ LocationManager: Fehler beim Erstellen der Memory: \(error)")
             }
         }
     }
@@ -575,6 +632,29 @@ class LocationManager: NSObject, ObservableObject {
     
     // MARK: - Location Request Helper
     
+    /// Fordert eine einmalige Standortabfrage an - PERFORMANCE OPTIMIZED
+    func requestLocationUpdate() {
+        guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways else {
+            requestPermission()
+            return
+        }
+        
+        // PERFORMANCE: Prüfe ob bereits aktuelle Location verfügbar ist
+        if let currentLocation = currentLocation {
+            let locationAge = Date().timeIntervalSince(currentLocation.timestamp)
+            
+            // Location ist frisch genug (unter 30 Sekunden)
+            if locationAge < 30.0 {
+                print("✅ LocationManager: Verwende aktuelle Location (Alter: \(Int(locationAge))s)")
+                return
+            }
+        }
+        
+        // Fordere neue Location nur bei Bedarf an
+        locationManager.requestLocation()
+        print("📍 LocationManager: Neue Standort-Abfrage gestartet")
+    }
+    
     /// Fordert eine einmalige Standortabfrage an
     func requestCurrentLocation() {
         guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways else {
@@ -588,7 +668,7 @@ class LocationManager: NSObject, ObservableObject {
     
     // MARK: - Background Processing Methods
     
-    /// Verarbeitet Location Updates im Background
+    /// PERFORMANCE-OPTIMIERT: Background Location Processing ohne Timer
     func processBackgroundLocationUpdates() async {
         DebugLogger.shared.log("🔄 Background Location Updates werden verarbeitet")
         
@@ -609,13 +689,13 @@ class LocationManager: NSObject, ObservableObject {
         // Speichere aktuelle Location als letzte signifikante Location
         lastSignificantLocation = currentLocation
         
-        // Update Location in Context von aktivem Trip
-        await updateTripLocation(currentLocation)
+        // VEREINFACHT: Nur bei signifikanten Änderungen Background-Updates
+        await updateTripLocationIfNeeded(currentLocation)
         
         DebugLogger.shared.log("✅ Background Location Update verarbeitet")
     }
     
-    /// Erstellt automatisch Memories bei signifikanten Location Changes
+    /// OPTIMIERT: Erstellt Pending Memories nur bei Bedarf
     func createPendingMemories() async {
         DebugLogger.shared.log("🔄 Erstelle Pending Memories")
         
@@ -626,10 +706,16 @@ class LocationManager: NSObject, ObservableObject {
             return
         }
         
-        // Prüfe ob Location alt genug ist für automatische Memory-Erstellung
+        // PERFORMANCE: Prüfe ob Location alt genug ist
         let locationAge = Date().timeIntervalSince(currentLocation.timestamp)
         guard locationAge < maximumLocationAge else {
             DebugLogger.shared.log("⚠️ Location zu alt für Memory-Erstellung: \(locationAge)s")
+            return
+        }
+        
+        // PERFORMANCE: Begrenze Anzahl Pending Memories
+        guard pendingMemories.count < 50 else {
+            DebugLogger.shared.log("⚠️ Zu viele Pending Memories - überspringe neue Erstellung")
             return
         }
         
@@ -653,6 +739,17 @@ class LocationManager: NSObject, ObservableObject {
         DebugLogger.shared.log("✅ Pending Memory erstellt")
     }
     
+    /// OPTIMIERT: Trip Location Update nur bei Bedarf
+    private func updateTripLocationIfNeeded(_ location: CLLocation) async {
+        // Prüfe ob Update nötig ist
+        guard let lastUpdate = lastLocationUpdate,
+              Date().timeIntervalSince(lastUpdate) > 60.0 else { // Max alle 60 Sekunden
+            return
+        }
+        
+        await updateTripLocation(location)
+    }
+    
     /// Aktualisiert Trip Location im Background
     private func updateTripLocation(_ location: CLLocation) async {
         let context = coreDataManager.persistentContainer.newBackgroundContext()
@@ -664,6 +761,7 @@ class LocationManager: NSObject, ObservableObject {
                 // Trip im Background Context finden
                 let tripRequest: NSFetchRequest<Trip> = Trip.fetchRequest()
                 tripRequest.predicate = NSPredicate(format: "id == %@", activeTrip.id! as CVarArg)
+                tripRequest.fetchLimit = 1
                 
                 guard try context.fetch(tripRequest).first != nil else {
                     DebugLogger.shared.log("⚠️ Aktiver Trip nicht im Background Context gefunden")

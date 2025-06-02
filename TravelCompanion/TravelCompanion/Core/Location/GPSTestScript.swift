@@ -63,17 +63,21 @@ struct GPSTestScript {
     // MARK: - Individual Tests
     
     private func setupTestData() async {
-        print("📊 Test 1: Sample-Daten Setup")
+        print("📊 Test 1: Test-Daten Setup")
         
-        SampleDataCreator.createSampleData(in: coreDataManager.viewContext)
-        // SampleDataCreator.printDataSummary(using: coreDataManager) // Kommentiert aus bis Implementierung
+        // Prüfe ob User und Trips vorhanden sind
+        let users = coreDataManager.fetchAllUsers()
+        if users.isEmpty {
+            print("ℹ️ Keine User gefunden - GPS Test benötigt existierende Daten")
+            return
+        }
         
         do {
             try await Task.sleep(nanoseconds: 1_000_000_000) // 1 Sekunde
         } catch {
             print("Sleep error: \(error)")
         }
-        print("✅ Sample-Daten erstellt\n")
+        print("✅ Test-Daten verfügbar\n")
     }
     
     private func testPermissions() async {
@@ -202,13 +206,13 @@ struct GPSTestScript {
         // User und Trip für Test holen
         let users = coreDataManager.fetchAllUsers()
         guard let user = users.first else {
-            print("❌ Kein User gefunden - führe zuerst Sample Data Creation aus")
+            print("❌ Kein User gefunden - erstelle zuerst User und Trip über die App")
             return
         }
         
         let trips = coreDataManager.fetchTrips(for: user)
         guard let trip = trips.first else {
-            print("❌ Kein Trip gefunden - erstelle einen Trip")
+            print("❌ Kein Trip gefunden - erstelle zuerst einen Trip über die App")
             return
         }
         

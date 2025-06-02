@@ -4,49 +4,46 @@ import CoreData
 /// Timeline View zeigt alle Memories der aktiven Reise chronologisch an
 struct TimelineView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var tripManager: TripManager
     @State private var showingMemoryCreation = false
+    @State private var showingTripCreation = false
     @State private var selectedTrip: Trip?
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var memoriesCache: [Memory] = []
+    @State private var lastCacheUpdate: Date = Date()
     
-    // Fetch alle Memories für automatische Updates
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)],
-        animation: .default
-    ) private var allMemories: FetchedResults<Memory>
-    
-    // Fetch alle Trips für Auswahl
+    // PERFORMANCE: Optimierte FetchRequest nur für aktive Trips
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Trip.createdAt, ascending: false)],
         animation: .default
     ) private var allTrips: FetchedResults<Trip>
     
-    // Computed property für aktive Trip
+    // PERFORMANCE: Computed property mit Caching
     private var activeTrip: Trip? {
         allTrips.first { $0.isActive }
     }
     
-    // Gefilterte Memories für aktive Trip
-    private var filteredMemories: [Memory] {
-        guard let trip = selectedTrip ?? activeTrip else { return [] }
-        return allMemories.filter { $0.trip == trip }
+    // PERFORMANCE: Optimierte Memory-Fetch mit Lazy Loading
+    private var currentTrip: Trip? {
+        selectedTrip ?? activeTrip
     }
     
     var body: some View {
         NavigationView {
             ZStack {
-                if let currentTrip = selectedTrip ?? activeTrip {
-                    if filteredMemories.isEmpty {
-                        emptyStateView(for: currentTrip)
+                if let trip = currentTrip {
+                    if memoriesCache.isEmpty {
+                        emptyStateView(for: trip)
                     } else {
-                        timelineListView(for: currentTrip)
+                        timelineListView(for: trip)
                     }
                 } else {
                     noActiveTripView
                 }
                 
                 // Floating Action Button für neue Memories
-                if (selectedTrip ?? activeTrip) != nil {
+                if currentTrip != nil {
                     VStack {
                         Spacer()
                         HStack {
@@ -72,45 +69,36 @@ struct TimelineView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if allTrips.count > 1 {
-                        Menu {
+                    Menu {
+                        // Trip Selection
+                        Picker("Reise auswählen", selection: $selectedTrip) {
+                            Text("Aktive Reise").tag(nil as Trip?)
                             ForEach(allTrips, id: \.objectID) { trip in
-                                Button(action: {
-                                    selectedTrip = trip
-                                }) {
-                                    HStack {
-                                        Text(trip.title ?? "Unbenannte Reise")
-                                        if trip.isActive {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green)
-                                        }
-                                        if trip == selectedTrip {
-                                            Image(systemName: "eye.fill")
-                                                .foregroundColor(.blue)
-                                        }
-                                    }
-                                }
+                                Text(trip.title ?? "Unbenannte Reise").tag(trip as Trip?)
                             }
-                            
-                            Divider()
-                            
-                            Button("Alle Reisen") {
-                                selectedTrip = nil
-                            }
-                        } label: {
-                            Image(systemName: "list.bullet")
                         }
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Aktualisieren") {
-                        refreshData()
+                        
+                        Divider()
+                        
+                        Button("Refresh") {
+                            refreshData()
+                        }
+                        
+                        Button("Neue Reise erstellen") {
+                            showingTripCreation = true
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
             .sheet(isPresented: $showingMemoryCreation) {
                 MemoryCreationView()
+                    .environment(\.managedObjectContext, viewContext)
+            }
+            .sheet(isPresented: $showingTripCreation) {
+                TripCreationView()
+                    .environment(\.managedObjectContext, viewContext)
             }
             .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
                 Button("OK") {
@@ -128,56 +116,70 @@ struct TimelineView: View {
         .onAppear {
             setupInitialData()
         }
+        .onChange(of: currentTrip) { _, _ in
+            updateMemoriesCache()
+        }
     }
     
     // MARK: - Computed Properties
     private var navigationTitle: String {
-        if let trip = selectedTrip {
+        if let trip = currentTrip {
             return trip.title ?? "Timeline"
-        } else if let activeTrip = activeTrip {
-            return activeTrip.title ?? "Timeline"
         }
         return "Timeline"
     }
     
-    // MARK: - Setup Methods
+    // MARK: - Setup
     private func setupInitialData() {
-        // Wenn keine Trips vorhanden sind, erstelle Sample Data
-        if allTrips.isEmpty {
-            print("📝 TimelineView: Keine Trips gefunden, erstelle Sample Data")
-            createSampleDataIfNeeded()
+        print("✅ TimelineView: Setup abgeschlossen - aktive Reise: \(activeTrip?.title ?? "keine")")
+        updateMemoriesCache()
+    }
+    
+    // PERFORMANCE: Asynchrone Memory-Cache Aktualisierung
+    private func updateMemoriesCache() {
+        guard let trip = currentTrip else {
+            memoriesCache = []
+            return
         }
         
-        // Wenn kein aktiver Trip vorhanden ist, setze den ersten als aktiv
-        if activeTrip == nil, let firstTrip = allTrips.first {
-            setTripActive(firstTrip)
+        // Verhindere zu häufige Updates
+        let now = Date()
+        if now.timeIntervalSince(lastCacheUpdate) < 2.0 && !memoriesCache.isEmpty {
+            return
+        }
+        
+        Task {
+            let memories = await fetchMemoriesForTrip(trip)
+            await MainActor.run {
+                self.memoriesCache = memories
+                self.lastCacheUpdate = now
+            }
         }
     }
     
-    private func createSampleDataIfNeeded() {
-        SampleDataCreator.createSampleData(in: viewContext)
-        do {
-            try viewContext.save()
-            print("✅ TimelineView: Sample Data erfolgreich erstellt")
-        } catch {
-            print("❌ TimelineView: Fehler beim Erstellen von Sample Data: \(error)")
-            errorMessage = "Fehler beim Laden der Daten: \(error.localizedDescription)"
+    // PERFORMANCE: Background Memory-Fetch
+    private func fetchMemoriesForTrip(_ trip: Trip) async -> [Memory] {
+        return await withCheckedContinuation { continuation in
+            viewContext.perform {
+                let request: NSFetchRequest<Memory> = Memory.fetchRequest()
+                request.predicate = NSPredicate(format: "trip == %@", trip)
+                request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.timestamp, ascending: false)]
+                request.fetchLimit = 100 // Limite für Performance
+                
+                do {
+                    let memories = try self.viewContext.fetch(request)
+                    continuation.resume(returning: memories)
+                } catch {
+                    print("❌ TimelineView: Memory-Fetch Fehler: \(error)")
+                    continuation.resume(returning: [])
+                }
+            }
         }
     }
     
     private func setTripActive(_ trip: Trip) {
-        // Alle anderen Trips deaktivieren
-        allTrips.forEach { $0.isActive = false }
-        // Ausgewählten Trip aktivieren
-        trip.isActive = true
-        
-        do {
-            try viewContext.save()
-            print("✅ TimelineView: Trip '\(trip.title ?? "Unknown")' als aktiv gesetzt")
-        } catch {
-            print("❌ TimelineView: Fehler beim Setzen des aktiven Trips: \(error)")
-            errorMessage = "Fehler beim Aktivieren der Reise: \(error.localizedDescription)"
-        }
+        TripManager.shared.setActiveTrip(trip)
+        print("✅ TimelineView: Trip-Aktivierung an TripManager delegiert")
     }
     
     private func refreshData() {
@@ -185,12 +187,13 @@ struct TimelineView: View {
             isLoading = true
         }
         
-        // Core Data Context refreshen
-        viewContext.refreshAllObjects()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation {
-                isLoading = false
+        // PERFORMANCE: Asynchroner Refresh
+        Task {
+            updateMemoriesCache()
+            await MainActor.run {
+                withAnimation {
+                    isLoading = false
+                }
             }
         }
     }
@@ -207,30 +210,47 @@ struct TimelineView: View {
                     .font(.title2)
                     .fontWeight(.semibold)
                 
-                Text("Wählen Sie eine Reise aus oder erstellen Sie eine neue, um Ihre Memories zu sehen.")
+                Text("Erstellen Sie eine neue Reise oder wählen Sie eine bestehende Reise aus, um Ihre Memories zu sehen.")
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
             
-            Button(action: {
-                if let firstTrip = allTrips.first {
-                    setTripActive(firstTrip)
+            VStack(spacing: 16) {
+                if allTrips.isEmpty {
+                    Button(action: {
+                        showingTripCreation = true
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Erste Reise erstellen")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.blue)
+                        .cornerRadius(25)
+                    }
                 } else {
-                    createSampleDataIfNeeded()
+                    Button(action: {
+                        if let firstTrip = allTrips.first {
+                            setTripActive(firstTrip)
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "suitcase.fill")
+                            Text("Erste Reise aktivieren")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.blue)
+                        .cornerRadius(25)
+                    }
                 }
-            }) {
-                HStack {
-                    Image(systemName: allTrips.isEmpty ? "plus.circle.fill" : "suitcase.fill")
-                    Text(allTrips.isEmpty ? "Erste Reise erstellen" : "Erste Reise aktivieren")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(Color.blue)
-                .cornerRadius(25)
             }
         }
     }
@@ -305,7 +325,7 @@ struct TimelineView: View {
                     // Trip Statistiken
                     HStack(spacing: 20) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(filteredMemories.count)")
+                            Text("\(memoriesCache.count)")
                                 .font(.title3)
                                 .fontWeight(.semibold)
                             Text("Memories")
@@ -329,8 +349,8 @@ struct TimelineView: View {
             }
             .listRowBackground(Color.blue.opacity(0.05))
             
-            // Memories Timeline
-            Section("Memories (\(filteredMemories.count))") {
+            // Memories Timeline - PERFORMANCE: LazyVStack für bessere Performance
+            Section("Memories (\(memoriesCache.count))") {
                 if isLoading {
                     HStack {
                         Spacer()
@@ -343,8 +363,8 @@ struct TimelineView: View {
                     }
                     .padding(.vertical, 8)
                 } else {
-                    ForEach(filteredMemories, id: \.objectID) { memory in
-                        InstagramStyleMemoryView(memory: memory)
+                    ForEach(memoriesCache, id: \.objectID) { memory in
+                        OptimizedMemoryView(memory: memory)
                             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                             .listRowSeparator(.hidden)
                     }
@@ -358,10 +378,9 @@ struct TimelineView: View {
     }
 }
 
-/// Instagram-ähnliche Memory-Darstellung in der Timeline
-struct InstagramStyleMemoryView: View {
+/// PERFORMANCE-OPTIMIERTE Memory-Darstellung ohne externe Image-Downloads
+struct OptimizedMemoryView: View {
     let memory: Memory
-    @State private var currentPhotoIndex = 0
     @State private var loadedImages: [UIImage] = []
     @State private var isLoadingImages = false
     
@@ -370,7 +389,7 @@ struct InstagramStyleMemoryView: View {
             // Header mit User Info
             headerView
             
-            // Foto Carousel
+            // Foto Carousel - OPTIMIERT: Keine externen Downloads
             photoCarouselView
             
             // Action Buttons
@@ -384,101 +403,109 @@ struct InstagramStyleMemoryView: View {
         }
         .background(Color(.systemBackground))
         .cornerRadius(0)
-        .onAppear {
-            loadImages()
+        .task {
+            await loadImagesAsync()
         }
     }
     
-    // MARK: - Photo Carousel
+    // MARK: - PERFORMANCE-OPTIMIERTE Photo Carousel
     @ViewBuilder
     private var photoCarouselView: some View {
-        if loadedImages.isEmpty && !isLoadingImages {
-            // Fallback für Memories ohne echte Fotos - zeige Demo-Foto
-            AsyncImage(url: URL(string: "https://picsum.photos/400/500?random=\(abs(memory.objectID.hashValue) % 1000 + 1)")) { image in
-                image
-                    .resizable()
-                    .aspectRatio(4/5, contentMode: .fill)
-                    .clipped()
-            } placeholder: {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .aspectRatio(4/5, contentMode: .fill)
-                    .overlay(
-                        ProgressView()
-                            .tint(.white)
-                    )
-            }
-            .frame(maxHeight: 400)
-        } else if isLoadingImages {
+        if isLoadingImages {
             Rectangle()
-                .fill(Color.gray.opacity(0.3))
+                .fill(LinearGradient(
+                    colors: [Color.gray.opacity(0.2), Color.gray.opacity(0.1)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
                 .aspectRatio(4/5, contentMode: .fill)
                 .overlay(
-                    ProgressView("Lade Fotos...")
-                        .tint(.white)
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 40))
+                            .foregroundColor(.gray.opacity(0.6))
+                        Text("Lade Fotos...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 )
                 .frame(maxHeight: 400)
-        } else if loadedImages.count == 1 {
-            // Einzelnes Foto
-            Image(uiImage: loadedImages[0])
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+        } else if loadedImages.isEmpty {
+            // PERFORMANCE: Statischer Platzhalter anstatt externe Downloads
+            Rectangle()
+                .fill(LinearGradient(
+                    colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.2)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
+                .aspectRatio(4/5, contentMode: .fill)
+                .overlay(
+                    VStack(spacing: 8) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text(memory.title ?? "Memory")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                )
                 .frame(maxHeight: 400)
-                .clipped()
         } else {
-            // Mehrere Fotos - Carousel
-            TabView(selection: $currentPhotoIndex) {
+            // Echte Fotos anzeigen
+            TabView {
                 ForEach(0..<loadedImages.count, id: \.self) { index in
                     Image(uiImage: loadedImages[index])
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(maxHeight: 400)
                         .clipped()
-                        .tag(index)
                 }
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
             .frame(maxHeight: 400)
-            .overlay(alignment: .topTrailing) {
-                // Photo Counter
-                if loadedImages.count > 1 {
-                    Text("\(currentPhotoIndex + 1)/\(loadedImages.count)")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.6))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        .padding()
-                }
-            }
         }
     }
     
-    // MARK: - Helper Methods
-    private func loadImages() {
+    // MARK: - PERFORMANCE: Asynchroner Image-Load
+    private func loadImagesAsync() async {
         guard !isLoadingImages, loadedImages.isEmpty else { return }
         
-        isLoadingImages = true
-        let photosArray = memory.photosArray
+        await MainActor.run {
+            isLoadingImages = true
+        }
         
-        Task {
-            var images: [UIImage] = []
-            
-            for photo in photosArray {
-                if let image = photo.loadUIImage() {
-                    images.append(image)
-                }
+        let photosArray = memory.photosArray
+        var images: [UIImage] = []
+        
+        // PERFORMANCE: Image-Loading in Background - FIXED für Sendable
+        for photo in photosArray {
+            // Extrahiere nur die lokale URL, um Sendable-Problem zu vermeiden
+            let localURL = photo.localURL
+            if let url = localURL, let image = await loadImageAsync(from: url) {
+                images.append(image)
             }
-            
-            await MainActor.run {
-                self.loadedImages = images
-                self.isLoadingImages = false
+            // Begrenze auf maximal 3 Bilder für Performance
+            if images.count >= 3 { break }
+        }
+        
+        await MainActor.run {
+            self.loadedImages = images
+            self.isLoadingImages = false
+        }
+    }
+    
+    private func loadImageAsync(from localURL: String) async -> UIImage? {
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let image = UIImage(contentsOfFile: localURL)
+                continuation.resume(returning: image)
             }
         }
     }
     
-    // MARK: - Header View
+    // MARK: - Helper Views
     private var headerView: some View {
         HStack(spacing: 12) {
             // Avatar (Kreis mit Initialen)
@@ -500,7 +527,7 @@ struct InstagramStyleMemoryView: View {
                     Image(systemName: "location.fill")
                         .font(.caption2)
                         .foregroundColor(.secondary)
-                    Text(memory.formattedLocation)
+                    Text(memory.safeFormattedLocation)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -512,7 +539,6 @@ struct InstagramStyleMemoryView: View {
         .padding(.vertical, 12)
     }
     
-    // MARK: - Action Buttons View
     private var actionButtonsView: some View {
         HStack(spacing: 16) {
             Button(action: {}) {
@@ -539,7 +565,6 @@ struct InstagramStyleMemoryView: View {
         .padding(.horizontal, 16)
     }
     
-    // MARK: - Content View
     private var contentView: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Titel
@@ -559,7 +584,6 @@ struct InstagramStyleMemoryView: View {
         .padding(.bottom, 16)
     }
     
-    // MARK: - Timestamp View
     private var timestampView: some View {
         Text(memory.formattedTimestamp)
             .font(.caption)
@@ -574,5 +598,6 @@ struct TimelineView_Previews: PreviewProvider {
     static var previews: some View {
         TimelineView()
             .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+            .environmentObject(TripManager.shared)
     }
 } 

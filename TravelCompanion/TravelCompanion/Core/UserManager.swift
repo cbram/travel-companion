@@ -43,16 +43,102 @@ class UserManager: ObservableObject {
     
     /// Lädt oder erstellt den Default User
     func loadOrCreateDefaultUser() {
+        guard !isLoading else {
+            print("⚠️ UserManager: Bereits beim Laden, überspringe...")
+            return
+        }
+        
         isLoading = true
         
-        DispatchQueue.main.async {
-            self.currentUser = User.fetchOrCreateDefaultUser(in: self.viewContext)
-            
-            // Speichern falls neuer User erstellt wurde
-            _ = self.saveContext()
-            
+        // SYNCHRONOUS Operation im Main Context für Stabilität
+        let user = User.fetchOrCreateDefaultUser(in: self.viewContext)
+        
+        // ERWEITERTE Validierung des geladenen/erstellten Users
+        guard !user.isDeleted,
+              let userContext = user.managedObjectContext,
+              userContext == self.viewContext else {
+            print("❌ UserManager: Geladener User ist ungültig oder in falschem Context")
+            self.currentUser = nil
             self.isLoading = false
-            print("✅ UserManager: Current User geladen: \(self.currentUser?.formattedDisplayName ?? "Unknown")")
+            return
+        }
+        
+        // STORE-VALIDIERUNG: Prüfe dass User wirklich im Persistent Store existiert
+        do {
+            _ = try viewContext.existingObject(with: user.objectID)
+            self.currentUser = user
+            print("✅ UserManager: Current User geladen und validiert: \(user.formattedDisplayName)")
+        } catch {
+            print("❌ UserManager: User nicht im Store gefunden: \(error)")
+            self.currentUser = nil
+        }
+        
+        // ZUSÄTZLICHER Save um sicherzustellen, dass alles persistiert ist
+        if viewContext.hasChanges {
+            if saveContext() {
+                print("✅ UserManager: User-Änderungen erfolgreich gespeichert")
+            } else {
+                print("❌ UserManager: Fehler beim Speichern der User-Änderungen")
+                self.currentUser = nil
+            }
+        }
+        
+        self.isLoading = false
+    }
+    
+    /// Validiert den aktuellen User und lädt ihn bei Bedarf neu - ENHANCED VERSION
+    func validateCurrentUser() -> Bool {
+        guard let user = currentUser else {
+            print("⚠️ UserManager: Kein currentUser vorhanden")
+            loadOrCreateDefaultUser()
+            return false
+        }
+        
+        // MULTI-LEVEL Validierung
+        // Level 1: Basic Object-Validierung
+        guard !user.isDeleted else {
+            print("⚠️ UserManager: CurrentUser ist gelöscht, lade neu...")
+            loadOrCreateDefaultUser()
+            return false
+        }
+        
+        // Level 2: Context-Validierung
+        guard let userContext = user.managedObjectContext else {
+            print("⚠️ UserManager: CurrentUser hat keinen Context, lade neu...")
+            loadOrCreateDefaultUser()
+            return false
+        }
+        
+        // Level 3: Context-Kompatibilität prüfen
+        guard userContext == viewContext || userContext.parent == viewContext else {
+            print("⚠️ UserManager: CurrentUser in inkompatiblem Context, lade neu...")
+            loadOrCreateDefaultUser()
+            return false
+        }
+        
+        // Level 4: Store-Existenz-Validierung (KRITISCH!)
+        do {
+            let storeUser = try viewContext.existingObject(with: user.objectID) as? User
+            guard let validStoreUser = storeUser,
+                  !validStoreUser.isDeleted,
+                  validStoreUser.isActive else {
+                print("⚠️ UserManager: CurrentUser nicht im Store oder inaktiv")
+                loadOrCreateDefaultUser()
+                return false
+            }
+            
+            // FINAL CHECK: Update currentUser reference if needed
+            if currentUser?.objectID != validStoreUser.objectID {
+                currentUser = validStoreUser
+                print("✅ UserManager: CurrentUser-Referenz aktualisiert")
+            }
+            
+            return true
+            
+        } catch {
+            print("⚠️ UserManager: CurrentUser Store-Validierung fehlgeschlagen: \(error)")
+            loadOrCreateDefaultUser()
+            return false
         }
     }
     
@@ -86,10 +172,31 @@ class UserManager: ObservableObject {
         return newUser
     }
     
-    /// Setzt einen User als aktuellen User
+    /// Setzt einen User als aktuellen User - ENHANCED VERSION
     func setCurrentUser(_ user: User) {
-        currentUser = user
-        print("✅ UserManager: Current User geändert zu: \(user.formattedDisplayName)")
+        // VALIDIERUNG vor dem Setzen
+        guard !user.isDeleted,
+              let userContext = user.managedObjectContext,
+              userContext == viewContext else {
+            print("❌ UserManager: Ungültiger User für setCurrentUser")
+            return
+        }
+        
+        // STORE-VALIDIERUNG
+        do {
+            let storeUser = try viewContext.existingObject(with: user.objectID) as? User
+            guard let validUser = storeUser,
+                  validUser.isActive else {
+                print("❌ UserManager: User nicht im Store oder inaktiv")
+                return
+            }
+            
+            currentUser = validUser
+            print("✅ UserManager: Current User erfolgreich geändert zu: \(validUser.formattedDisplayName)")
+            
+        } catch {
+            print("❌ UserManager: Fehler bei setCurrentUser Store-Validierung: \(error)")
+        }
     }
     
     /// Aktualisiert User-Daten
@@ -150,13 +257,27 @@ class UserManager: ObservableObject {
     }
     
     private func saveContext() -> Bool {
+        guard viewContext.hasChanges else {
+            return true // Kein Save nötig
+        }
+        
         do {
-            if viewContext.hasChanges {
-                try viewContext.save()
+            // Performance-Monitoring
+            let startTime = CFAbsoluteTimeGetCurrent()
+            try viewContext.save()
+            let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+            
+            if timeElapsed > 0.1 {
+                print("⚠️ UserManager: Langsamer Context-Save: \(String(format: "%.3f", timeElapsed))s")
+            } else {
+                print("✅ UserManager: Context erfolgreich gespeichert (\(String(format: "%.3f", timeElapsed))s)")
             }
+            
             return true
         } catch {
             print("❌ UserManager: Core Data Save Error: \(error)")
+            // ROLLBACK bei Fehlern
+            viewContext.rollback()
             return false
         }
     }
