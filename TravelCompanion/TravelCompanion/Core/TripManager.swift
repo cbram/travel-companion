@@ -13,6 +13,7 @@ enum TripCreationResult {
 
 /// Zentrale Service-Klasse für Trip-Management
 /// Verwaltet aktive Reise, erstellt neue Reisen und stellt Trip-Daten für die gesamte App bereit
+@MainActor
 class TripManager: ObservableObject {
     
     // MARK: - Singleton
@@ -41,7 +42,9 @@ class TripManager: ObservableObject {
         userManager.$currentUser
             .sink { [weak self] user in
                 if user != nil {
-                    self?.loadInitialData()
+                    Task {
+                        await self?.loadInitialData()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -52,31 +55,29 @@ class TripManager: ObservableObject {
         // Beobachte Core Data Änderungen
         NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)
             .sink { [weak self] _ in
-                DispatchQueue.main.async {
-                    self?.refreshTripsInternal()
+                Task {
+                    await self?.refreshTripsInternal()
                 }
             }
             .store(in: &cancellables)
     }
     
-    private func loadInitialData() {
+    private func loadInitialData() async {
         guard !isLoading else { return }
         isLoading = true
         
-        DispatchQueue.main.async {
-            self.refreshTripsInternal()
-            self.loadCurrentTrip()
-            
-            // Keine automatische Default-Trip-Erstellung mehr
-            
-            self.isLoading = false
-        }
+        await refreshTripsInternal()
+        await loadCurrentTrip()
+        
+        // Keine automatische Default-Trip-Erstellung mehr
+        
+        self.isLoading = false
     }
     
     // MARK: - Public Trip Management Methods
     
     /// Erstellt eine neue Reise mit verbesserter Fehlerbehandlung
-    func createTripWithResult(title: String, description: String? = nil, startDate: Date = Date()) -> TripCreationResult {
+    func createTripWithResult(title: String, description: String? = nil, startDate: Date = Date()) async -> TripCreationResult {
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return .validationFailed("Trip-Titel darf nicht leer sein")
         }
@@ -88,7 +89,7 @@ class TripManager: ObservableObject {
         }
         
         // Validiere und bereite User für Context-Operationen vor
-        guard let userInContext = validateAndPrepareUser() else {
+        guard let userInContext = await validateAndPrepareUser() else {
             print("❌ TripManager: User-Validierung fehlgeschlagen")
             return .userValidationFailed
         }
@@ -113,6 +114,7 @@ class TripManager: ObservableObject {
             
             if coreDataManager.save() {
                 print("✅ TripManager: Trip erfolgreich gespeichert (Versuch \(saveAttempts))")
+                lastSaveError = nil
                 break
             } else {
                 lastSaveError = coreDataManager.lastSaveError
@@ -120,7 +122,7 @@ class TripManager: ObservableObject {
                 
                 if saveAttempts < maxSaveAttempts {
                     // Kurze Pause vor erneutem Versuch
-                    Thread.sleep(forTimeInterval: 0.1)
+                    try? await Task.sleep(for: .milliseconds(100))
                 }
             }
         }
@@ -129,7 +131,7 @@ class TripManager: ObservableObject {
         guard saveAttempts <= maxSaveAttempts && lastSaveError == nil else {
             let errorMessage = "Alle Save-Versuche fehlgeschlagen nach \(maxSaveAttempts) Versuchen: \(lastSaveError?.localizedDescription ?? "Unbekannter Fehler")"
             print("❌ TripManager: \(errorMessage)")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return .saveFailed(errorMessage)
         }
         
@@ -140,7 +142,7 @@ class TripManager: ObservableObject {
               trip.owner != nil else {
             let errorMessage = "Trip-Validierung fehlgeschlagen - Permanent ID: \(!trip.objectID.isTemporaryID), Not deleted: \(!trip.isDeleted), Correct context: \(trip.managedObjectContext == viewContext), Has owner: \(trip.owner != nil)"
             print("❌ TripManager: \(errorMessage)")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return .validationFailed(errorMessage)
         }
         
@@ -150,25 +152,25 @@ class TripManager: ObservableObject {
         print("   - Owner: \(trip.owner?.displayName ?? "Unknown")")
         
         // SICHERE Trip-Liste-Aktualisierung
-        refreshTripsInternal()
+        await refreshTripsInternal()
         
         // Rückgabe des erfolgreichen Ergebnisses
         return .success(trip)
     }
     
     /// Erstellt eine neue Reise (Legacy-Methode für Kompatibilität)
-    func createTrip(title: String, description: String? = nil, startDate: Date = Date()) -> Trip? {
-        let result = createTripWithResult(title: title, description: description, startDate: startDate)
+    func createTrip(title: String, description: String? = nil, startDate: Date = Date()) async -> Trip? {
+        let result = await createTripWithResult(title: title, description: description, startDate: startDate)
         switch result {
         case .success(let trip):
-            return trip
+        return trip
         default:
             return nil
         }
     }
     
     /// Setzt die aktive Reise
-    func setActiveTrip(_ trip: Trip) {
+    func setActiveTrip(_ trip: Trip) async {
         print("🔄 TripManager: Setze Trip '\(trip.title ?? "Unknown")' als aktiv")
         
         // ERWEITERTE Validierung: Multi-Level Object-Check
@@ -177,14 +179,14 @@ class TripManager: ObservableObject {
               tripContext == viewContext || tripContext.parent == viewContext,
               coreDataManager.isValidObject(trip) else {
             print("❌ TripManager: Trip ungültig oder in falschem Context")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
         // Sicherstellen, dass der Trip im korrekten Context ist
-        guard let tripInContext = ensureObjectInViewContext(trip) else {
+        guard let tripInContext = await ensureObjectInViewContext(trip) else {
             print("❌ TripManager: Fehler beim Laden des Trips in den korrekten Context")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
@@ -192,7 +194,7 @@ class TripManager: ObservableObject {
         guard coreDataManager.isValidObject(tripInContext),
               !tripInContext.isDeleted else {
             print("❌ TripManager: Trip nach Context-Transfer ungültig")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
@@ -213,7 +215,7 @@ class TripManager: ObservableObject {
             
             // Batch-Deaktivierung aller anderen Trips
             for tripToUpdate in userTrips {
-                if coreDataManager.isValidObject(tripToUpdate) && 
+                if coreDataManager.isValidObject(tripToUpdate) &&
                    tripToUpdate.objectID != tripObjectID {
                     tripToUpdate.isActive = false
                 }
@@ -224,7 +226,7 @@ class TripManager: ObservableObject {
             
         } catch {
             print("❌ TripManager: Fehler beim Batch-Update der Trip-Status: \(error)")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
@@ -233,7 +235,7 @@ class TripManager: ObservableObject {
             print("❌ TripManager: Fehler beim Setzen der aktiven Reise")
             // ROLLBACK: Bei Fehler Zustand zurücksetzen
             viewContext.rollback()
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
@@ -244,7 +246,7 @@ class TripManager: ObservableObject {
                   validatedTrip.isActive,
                   coreDataManager.isValidObject(validatedTrip) else {
                 print("❌ TripManager: Trip nach Save-Validierung fehlgeschlagen")
-                refreshTripsInternal()
+                await refreshTripsInternal()
                 return
             }
             
@@ -254,7 +256,7 @@ class TripManager: ObservableObject {
             
         } catch {
             print("❌ TripManager: Final Trip-Validierung fehlgeschlagen: \(error)")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
     }
@@ -265,18 +267,18 @@ class TripManager: ObservableObject {
     }
     
     /// Löscht eine Reise
-    func deleteTrip(_ trip: Trip) {
+    func deleteTrip(_ trip: Trip) async {
         // Validierung: Prüfe ob Trip noch im Context existiert
         guard !trip.isDeleted && trip.managedObjectContext != nil else {
             print("⚠️ TripManager: Trip bereits gelöscht oder nicht im Context")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
         // Sicherstellen, dass der Trip im korrekten Context ist
-        guard let tripInContext = ensureObjectInViewContext(trip) else {
+        guard let tripInContext = await ensureObjectInViewContext(trip) else {
             print("❌ TripManager: Fehler beim Laden des Trips in den korrekten Context für Löschung")
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
@@ -302,7 +304,7 @@ class TripManager: ObservableObject {
         guard coreDataManager.save() else {
             print("❌ TripManager: Fehler beim Löschen der Reise")
             // Bei Fehler: Liste neu laden um Konsistenz zu gewährleisten
-            refreshTripsInternal()
+            await refreshTripsInternal()
             return
         }
         
@@ -321,11 +323,11 @@ class TripManager: ObservableObject {
         print("✅ TripManager: Reise gelöscht: \(tripTitle)")
         
         // Abschließende Synchronisation
-        refreshTripsInternal()
+        await refreshTripsInternal()
     }
     
     /// Beendet die aktuelle Reise
-    func endCurrentTrip() {
+    func endCurrentTrip() async {
         guard let trip = currentTrip else { return }
         
         trip.endDate = Date()
@@ -342,19 +344,17 @@ class TripManager: ObservableObject {
         LocationManager.shared.stopTracking()
         
         currentTrip = nil
-        refreshTripsInternal()
+        await refreshTripsInternal()
     }
     
     /// Aktualisiert die Trip-Liste manuell
-    func refreshTrips() {
-        DispatchQueue.main.async {
-            self.refreshTripsInternal()
-        }
+    func refreshTrips() async {
+        await refreshTripsInternal()
     }
     
     // MARK: - Private Helper Methods
     
-    private func refreshTripsInternal() {
+    private func refreshTripsInternal() async {
         guard let user = getCurrentUser() else {
             allTrips = []
             return
@@ -363,7 +363,7 @@ class TripManager: ObservableObject {
         allTrips = Trip.fetchAllTrips(for: user, in: viewContext)
     }
     
-    private func loadCurrentTrip() {
+    private func loadCurrentTrip() async {
         guard let user = getCurrentUser() else {
             currentTrip = nil
             return
@@ -382,7 +382,7 @@ class TripManager: ObservableObject {
     // MARK: - Context Management Helper
     
     /// Stellt sicher, dass ein Core Data Object im ViewContext verfügbar ist
-    private func ensureObjectInViewContext<T: NSManagedObject>(_ object: T) -> T? {
+    private func ensureObjectInViewContext<T: NSManagedObject>(_ object: T) async -> T? {
         // FAST PATH: Object bereits im viewContext
         if object.managedObjectContext == viewContext {
             return object
@@ -418,11 +418,10 @@ class TripManager: ObservableObject {
                 self.userManager.loadOrCreateDefaultUser()
                 
                 // Warte kurz und versuche erneut (non-blocking)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                    guard let self = self else { return }
-                    if self.userManager.currentUser != nil {
-                        print("✅ TripManager: User erfolgreich neu geladen nach Fehler")
-                    }
+                try? await Task.sleep(for: .milliseconds(100))
+                
+                if self.userManager.currentUser != nil {
+                    print("✅ TripManager: User erfolgreich neu geladen nach Fehler")
                 }
             }
             
@@ -431,7 +430,7 @@ class TripManager: ObservableObject {
     }
     
     /// Validiert und bereitet User für Context-Operationen vor
-    private func validateAndPrepareUser() -> User? {
+    private func validateAndPrepareUser() async -> User? {
         guard let currentUser = userManager.currentUser else {
             print("❌ TripManager: Kein aktueller User verfügbar")
             return nil
@@ -506,7 +505,7 @@ class TripManager: ObservableObject {
     }
     
     /// NEUE FUNKTION: Test Trip-Erstellung mit vollständiger Validierung
-    func debugCreateTrip() {
+    func debugCreateTrip() async {
         print("\n🧪 TripManager Debug: Test-Trip-Erstellung")
         print("==========================================")
         
@@ -524,7 +523,7 @@ class TripManager: ObservableObject {
         let testTitle = "Debug Test Reise \(Date().timeIntervalSince1970)"
         print("🔨 Erstelle Test-Trip: '\(testTitle)'")
         
-        if let trip = createTrip(title: testTitle, description: "Debug Test Beschreibung") {
+        if let trip = await createTrip(title: testTitle, description: "Debug Test Beschreibung") {
             print("✅ Test-Trip erfolgreich erstellt:")
             print("   - Titel: \(trip.title ?? "nil")")
             print("   - ID: \(trip.objectID)")
@@ -533,7 +532,7 @@ class TripManager: ObservableObject {
             
             // Trip wieder löschen
             print("🗑️ Lösche Test-Trip...")
-            deleteTrip(trip)
+            await deleteTrip(trip)
             print("✅ Test-Trip gelöscht")
         } else {
             print("❌ Test-Trip-Erstellung fehlgeschlagen")
@@ -543,7 +542,7 @@ class TripManager: ObservableObject {
     }
     
     /// NEUE FUNKTION: Automatische Diagnose und Problem-Behebung
-    func diagnoseAndFix() {
+    func diagnoseAndFix() async {
         print("\n🩺 TripManager: Starte automatische Diagnose...")
         print("================================================")
         
@@ -569,7 +568,7 @@ class TripManager: ObservableObject {
         
         // 5. Aktualisiere lokale Trip-Liste
         print("🔄 Aktualisiere Trip-Liste...")
-        refreshTripsInternal()
+        await refreshTripsInternal()
         
         // 6. Final-Validierung
         print("✅ Final-Validierung:")

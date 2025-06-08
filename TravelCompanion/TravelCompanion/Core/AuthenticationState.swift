@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 
 /// Verwaltet den Authentifizierungsstatus der App
+@MainActor
 class AuthenticationState: ObservableObject {
     
     // MARK: - Singleton
@@ -11,6 +12,7 @@ class AuthenticationState: ObservableObject {
     @Published var isAuthenticated = false
     @Published var needsUserSelection = false
     @Published var isLoading = true
+    @Published var currentUser: User? = nil
     
     // MARK: - Private Properties
     private var userManager = UserManager.shared
@@ -29,7 +31,7 @@ class AuthenticationState: ObservableObject {
         userManager.$currentUser
             .receive(on: DispatchQueue.main)
             .sink { [weak self] user in
-                self?.updateAuthenticationStatus(user: user)
+                self?.handleUserUpdate(user)
             }
             .store(in: &cancellables)
     }
@@ -41,20 +43,22 @@ class AuthenticationState: ObservableObject {
         isLoading = true
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.updateAuthenticationStatus(user: self.userManager.currentUser)
+            self.handleUserUpdate(self.userManager.currentUser)
             self.isLoading = false
         }
     }
     
     /// Aktualisiert den Authentifizierungsstatus basierend auf dem aktuellen User
-    private func updateAuthenticationStatus(user: User?) {
+    private func handleUserUpdate(_ user: User?) {
         if let user = user, user.isActive {
-            isAuthenticated = true
-            needsUserSelection = false
+            self.currentUser = user
+            self.isAuthenticated = true
+            self.needsUserSelection = false
             print("✅ AuthenticationState: User \(user.formattedDisplayName) ist angemeldet")
         } else {
-            isAuthenticated = false
-            needsUserSelection = true
+            self.currentUser = nil
+            self.isAuthenticated = false
+            self.needsUserSelection = true
             print("⚠️ AuthenticationState: Kein gültiger User angemeldet")
         }
     }
@@ -112,5 +116,22 @@ class AuthenticationState: ObservableObject {
     var currentUserInfo: String? {
         guard let user = userManager.currentUser else { return nil }
         return "\(user.formattedDisplayName) (\(user.email ?? "Keine E-Mail"))"
+    }
+    
+    /// Versucht, den User manuell neu zu laden und den Status zu aktualisieren
+    func refreshAuthenticationState() {
+        print("🔄 AuthenticationState: Aktualisiere Authentifizierungsstatus...")
+        userManager.loadOrCreateDefaultUser()
+        handleUserUpdate(userManager.currentUser)
+    }
+    
+    /// Loggt den User aus
+    func logout() {
+        print("👤 AuthenticationState: User wird ausgeloggt...")
+        // In einer echten App würde hier z.B. ein Token gelöscht werden
+        
+        // Für diese App setzen wir einfach den User zurück
+        self.currentUser = nil
+        self.isAuthenticated = false
     }
 } 

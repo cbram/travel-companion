@@ -3,9 +3,11 @@ import CoreLocation
 import CoreData
 import UserNotifications
 import UIKit
+import Combine
 
 /// LocationManager für GPS-Tracking mit intelligenter Batterie-Optimierung
 /// und automatischer Pause-Erkennung
+@MainActor
 class LocationManager: NSObject, ObservableObject {
     
     // MARK: - Singleton
@@ -83,8 +85,12 @@ class LocationManager: NSObject, ObservableObject {
     
     // MARK: - Initialization
     override init() {
+        self.authorizationStatus = locationManager.authorizationStatus
         super.init()
-        setupLocationManager()
+        self.locationManager.delegate = self
+        self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        self.locationManager.allowsBackgroundLocationUpdates = true // Für Tracking im Hintergrund
+        self.locationManager.showsBackgroundLocationIndicator = true // Zeigt blauen Indikator
         setupBatteryMonitoring()
         loadPendingMemories()
     }
@@ -92,7 +98,6 @@ class LocationManager: NSObject, ObservableObject {
     // MARK: - Setup Methods
     
     private func setupLocationManager() {
-        locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 10
         authorizationStatus = locationManager.authorizationStatus
@@ -453,7 +458,9 @@ class LocationManager: NSObject, ObservableObject {
         
         pauseTimer?.invalidate()
         pauseTimer = Timer.scheduledTimer(withTimeInterval: pauseDetectionInterval, repeats: false) { [weak self] _ in
-            self?.detectPause()
+            Task { @MainActor [weak self] in
+                self?.detectPause()
+            }
         }
     }
     
@@ -912,79 +919,94 @@ class LocationManager: NSObject, ObservableObject {
 }
 
 // MARK: - CLLocationManagerDelegate
-
 extension LocationManager: CLLocationManagerDelegate {
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
-        // Update current location immediately
-        DispatchQueue.main.async {
+        Task { @MainActor in
+            // Update current location immediately
             self.currentLocation = location
             print("✅ LocationManager: Location aktualisiert - \(location.formattedCoordinates), Genauigkeit: \(location.horizontalAccuracy)m")
-        }
-        
-        // Handle location for tracking if enabled
-        if isTracking {
-            handleLocationUpdate(location)
+            
+            // Handle location for tracking if enabled
+            if self.isTracking {
+                self.handleLocationUpdate(location)
+            }
         }
     }
     
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("❌ LocationManager: Location update failed - \(error.localizedDescription)")
         
         // Bei kritischen Fehlern Tracking stoppen
         if let clError = error as? CLError {
             switch clError.code {
-            case .denied:
-                print("❌ LocationManager: Location access denied")
-                if isTracking {
-                    stopTracking()
+            case .denied, .locationUnknown:
+                Task { @MainActor in
+                    self.stopTracking()
                 }
-            case .locationUnknown:
-                print("⚠️ LocationManager: Location unknown - will continue trying...")
-            case .network:
-                print("⚠️ LocationManager: Network error - will retry...")
             default:
-                print("⚠️ LocationManager: Other location error (\(clError.code.rawValue)) - continuing...")
+                break
             }
         }
     }
     
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        DispatchQueue.main.async {
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        Task { @MainActor in
             self.authorizationStatus = manager.authorizationStatus
-        }
-        
-        switch authorizationStatus {
-        case .notDetermined:
-            print("📍 LocationManager: Authorization not determined")
-        case .denied, .restricted:
-            print("❌ LocationManager: Location access denied or restricted")
-            if isTracking {
-                stopTracking()
+            
+            switch manager.authorizationStatus {
+            case .authorizedAlways:
+                print("✅ LocationManager: Berechtigung für 'Immer' erteilt")
+            case .authorizedWhenInUse:
+                print("✅ LocationManager: Berechtigung für 'Wenn in Nutzung' erteilt")
+                self.locationManager.requestAlwaysAuthorization() // Versuche auf 'Immer' zu erhöhen
+            case .denied, .restricted:
+                print("❌ LocationManager: Berechtigung verweigert")
+                self.stopTracking()
+            case .notDetermined:
+                print("🤔 LocationManager: Berechtigung noch nicht festgelegt")
+            @unknown default:
+                break
             }
-        case .authorizedWhenInUse:
-            print("⚠️ LocationManager: Only foreground location access - request always authorization for tracking")
-            // Request initial location when permission granted
-            locationManager.requestLocation()
-        case .authorizedAlways:
-            print("✅ LocationManager: Full location access granted")
-            // Request initial location when permission granted
-            locationManager.requestLocation()
-        @unknown default:
-            print("❓ LocationManager: Unknown authorization status")
         }
     }
     
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        print("📍 LocationManager: Region betreten: \(region.identifier)")
+    nonisolated func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        Task { @MainActor in
+            guard self.isTracking, 
+                  let trip = self.activeTrip,
+                  let user = self.currentUser,
+                  let location = manager.location ?? self.currentLocation else { return }
+
+            self.createMemory(
+                title: "📍 Betreten der Region",
+                content: "Region \(region.identifier) betreten",
+                location: location,
+                trip: trip,
+                user: user
+            )
+        }
     }
     
-    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        print("📍 LocationManager: Region verlassen: \(region.identifier)")
+    nonisolated func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        Task { @MainActor in
+            guard self.isTracking,
+                  let trip = self.activeTrip,
+                  let user = self.currentUser,
+                  let location = manager.location ?? self.currentLocation else { return }
+                  
+            self.createMemory(
+                title: "📍 Verlassen der Region",
+                content: "Region \(region.identifier) verlassen",
+                location: location,
+                trip: trip,
+                user: user
+            )
+        }
     }
 }
 
 // MARK: - Codable Support für PendingMemory
-
 extension LocationManager.PendingMemory: Codable {} 

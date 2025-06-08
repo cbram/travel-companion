@@ -35,6 +35,7 @@ class MemoryCreationViewModel: ObservableObject {
     // MARK: - Dependencies
     private let coreDataManager = CoreDataManager.shared
     private let locationManager = LocationManager.shared
+    private let photoFileManager = PhotoFileManager.shared
     
     // MARK: - Computed Properties
     var canSave: Bool {
@@ -256,43 +257,79 @@ class MemoryCreationViewModel: ObservableObject {
         
         isSaving = true
         
-        print("📝 MemoryCreationViewModel: Erstelle Memory mit:")
-        print("   - Titel: '\(title)'")
-        print("   - Inhalt: '\(content)'")
-        print("   - Koordinaten: \(lat), \(lon)")
-        print("   - Trip: \(trip.title ?? "Unknown")")
-        print("   - User: \(user.displayName ?? "Unknown")")
+        // VERBESSERTE Memory-Erstellung mit besserer Photo-Persistierung
+        let memory = coreDataManager.createMemory(
+            title: title,
+            content: content,
+            latitude: lat,
+            longitude: lon,
+            author: user,
+            trip: trip,
+            photo: selectedImage
+        )
         
-        // OPTIMIERTE Memory-Erstellung: Background Context für bessere Performance
-        do {
-            let memoryResult = try await createMemoryInBackground(
-                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                content: content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content.trimmingCharacters(in: .whitespacesAndNewlines),
-                latitude: lat,
-                longitude: lon,
-                tripID: trip.id!,
-                userID: user.id!
-            )
+        // ✅ KRITISCHER FIX: Stelle sicher, dass Photo korrekt verknüpft ist
+        if let selectedImage = selectedImage {
+            // Prüfe ob Photo korrekt erstellt wurde
+            if memory.photosArray.isEmpty {
+                print("⚠️ MemoryCreationViewModel: Photo wurde nicht korrekt erstellt, erstelle manuell...")
+                
+                // Manuell Photo erstellen falls automatische Erstellung fehlgeschlagen ist
+                let photo = Photo(context: coreDataManager.viewContext)
+                photo.id = UUID()
+                photo.createdAt = Date()
+                
+                // Foto speichern und filename setzen
+                if photo.saveUIImage(selectedImage, to: coreDataManager.getPhotosDirectory()) {
+                    memory.addToPhotos(photo)
+                    print("✅ MemoryCreationViewModel: Photo manuell erstellt und verknüpft")
+                } else {
+                    print("❌ MemoryCreationViewModel: Manueller Photo-Save fehlgeschlagen")
+                    coreDataManager.viewContext.delete(photo)
+                }
+            } else {
+                print("✅ MemoryCreationViewModel: Photo wurde automatisch korrekt erstellt")
+            }
+        }
+        
+        // KRITISCHER SAVE mit mehr Debug-Informationen
+        print("🔄 MemoryCreationViewModel: Starte Context-Save...")
+        print("   - Memory ID: \(memory.id?.uuidString ?? "nil")")
+        print("   - Photos Count: \(memory.photosArray.count)")
+        print("   - Context has changes: \(coreDataManager.viewContext.hasChanges)")
+        
+        let success = coreDataManager.save()
+        
+        isSaving = false
+        
+        if success {
+            print("✅ MemoryCreationViewModel: Memory und Foto erfolgreich gespeichert. Memory-ID: \(memory.id?.uuidString ?? "N/A")")
             
-            print("✅ MemoryCreationViewModel: Memory erfolgreich gespeichert")
-            
-            // Foto separat speichern falls vorhanden
-            if let image = selectedImage {
-                await savePhotoOptimized(image: image, memoryID: memoryResult.id!)
+            // ZUSÄTZLICHE Validierung: Prüfe ob Memory wirklich persistent ist
+            if let memoryID = memory.id {
+                let fetchRequest: NSFetchRequest<Memory> = Memory.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %@", memoryID as CVarArg)
+                
+                do {
+                    let savedMemories = try coreDataManager.viewContext.fetch(fetchRequest)
+                    if let savedMemory = savedMemories.first {
+                        print("✅ MemoryCreationViewModel: Memory persistent validiert - Photos: \(savedMemory.photosArray.count)")
+                    } else {
+                        print("❌ MemoryCreationViewModel: Memory NICHT persistent gespeichert!")
+                    }
+                } catch {
+                    print("❌ MemoryCreationViewModel: Fehler bei Persistierung-Validierung: \(error)")
+                }
             }
             
-            isSaving = false
             showingSuccess = true
-            
-            // Nach kurzer Verzögerung Form zurücksetzen
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                self.resetForm()
+            resetForm()
+        } else {
+            print("❌ MemoryCreationViewModel: Fehler beim Speichern des Core Data Context.")
+            if let error = coreDataManager.lastSaveError {
+                print("❌ MemoryCreationViewModel: Save Error Details: \(error)")
             }
-            
-        } catch {
-            print("❌ MemoryCreationViewModel: Memory-Speicherung fehlgeschlagen: \(error.localizedDescription)")
-            isSaving = false
-            showError("Fehler beim Speichern in der Datenbank: \(error.localizedDescription)")
+            showError("Ein Fehler ist beim Speichern der Memory aufgetreten.")
         }
     }
     
@@ -437,11 +474,25 @@ class MemoryCreationViewModel: ObservableObject {
             return nil
         }
         
-        let fileURL = documentsDirectory.appendingPathComponent(filename)
+        // ✅ KRITISCHER FIX: Verwende konsistentes Photos-Verzeichnis
+        let photosDirectory = documentsDirectory.appendingPathComponent("Photos")
+        
+        // ✅ WICHTIG: Directory erstellen falls es nicht existiert
+        if !FileManager.default.fileExists(atPath: photosDirectory.path) {
+            do {
+                try FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true, attributes: nil)
+                print("✅ MemoryCreationViewModel: Photos Directory erstellt")
+            } catch {
+                print("❌ MemoryCreationViewModel: Fehler beim Erstellen des Photos Directory: \(error)")
+                return nil
+            }
+        }
+        
+        let fileURL = photosDirectory.appendingPathComponent(filename)
         
         do {
             try data.write(to: fileURL)
-            print("✅ MemoryCreationViewModel: Bild gespeichert: \(fileURL.lastPathComponent)")
+            print("✅ MemoryCreationViewModel: Bild gespeichert in: \(fileURL.path)")
             return fileURL.path  // String-Pfad für Core Data zurückgeben
         } catch {
             print("❌ MemoryCreationViewModel: Fehler beim Speichern: \(error)")

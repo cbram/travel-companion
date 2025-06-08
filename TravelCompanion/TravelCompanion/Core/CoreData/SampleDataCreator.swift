@@ -143,6 +143,7 @@ class SampleDataCreator {
     
     // MARK: - Data Summary
     
+    @MainActor
     static func printDataSummary(using coreDataManager: CoreDataManager) {
         let users = coreDataManager.fetchAllUsers()
         let trips = coreDataManager.fetchAllTrips()

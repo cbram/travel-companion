@@ -92,7 +92,8 @@ struct TripCreationView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Erstellen") {
-                        viewModel.createTrip(using: tripManager) { result in
+                        Task {
+                            let result = await viewModel.createTrip(using: tripManager)
                             switch result {
                             case .success:
                                 dismiss()
@@ -100,6 +101,8 @@ struct TripCreationView: View {
                                 showingUserCreation = true
                             case .userValidationFailed, .saveFailed, .validationFailed:
                                 // Andere Fehler werden durch das ViewModel behandelt
+                                break
+                            case .none:
                                 break
                             }
                         }
@@ -116,11 +119,10 @@ struct TripCreationView: View {
             .sheet(isPresented: $showingUserCreation) {
                 UserCreationView {
                     // Nach User-Erstellung automatisch Trip erstellen
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        viewModel.createTrip(using: tripManager) { result in
-                            if case .success = result {
-                                dismiss()
-                            }
+                    Task {
+                        let result = await viewModel.createTrip(using: tripManager)
+                        if case .success = result {
+                            dismiss()
                         }
                     }
                 }
@@ -162,60 +164,51 @@ class TripCreationViewModel: ObservableObject {
     }
     
     // MARK: - Trip Creation
-    func createTrip(using tripManager: TripManager, completion: @escaping (TripCreationResult) -> Void) {
+    func createTrip(using tripManager: TripManager) async -> TripCreationResult? {
         guard isValid else {
             showError(message: "Bitte geben Sie einen Titel für die Reise ein.")
-            completion(.validationFailed("Titel fehlt"))
-            return
+            return .validationFailed("Titel fehlt")
         }
         
         isCreating = true
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-            
-            let trimmedDescription = self.description.trimmingCharacters(in: .whitespacesAndNewlines)
-            let finalDescription = trimmedDescription.isEmpty ? nil : trimmedDescription
-            
-            let result = tripManager.createTripWithResult(
-                title: self.title,
-                description: finalDescription,
-                startDate: self.startDate
-            )
-            
-            switch result {
-            case .success(let trip):
-                // Als aktive Reise setzen wenn gewünscht
-                if self.setAsActive {
-                    tripManager.setActiveTrip(trip)
-                }
-                
-                self.isCreating = false
-                completion(result)
-                print("✅ TripCreationView: Reise erfolgreich erstellt: \(self.title)")
-                
-            case .noUserAvailable:
-                // Kein Fehler anzeigen, stattdessen UserCreationView öffnen
-                self.isCreating = false
-                completion(result)
-                print("📝 TripCreationView: Kein User vorhanden - öffne User-Erstellung")
-                
-            case .userValidationFailed:
-                self.showError(message: "Benutzer-Validierung fehlgeschlagen. Bitte versuche es erneut.")
-                self.isCreating = false
-                completion(result)
-                
-            case .saveFailed(let errorMessage):
-                self.showError(message: "Fehler beim Speichern: \(errorMessage)")
-                self.isCreating = false
-                completion(result)
-                
-            case .validationFailed(let errorMessage):
-                self.showError(message: "Validierung fehlgeschlagen: \(errorMessage)")
-                self.isCreating = false
-                completion(result)
+        let trimmedDescription = self.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalDescription = trimmedDescription.isEmpty ? nil : trimmedDescription
+        
+        let result = await tripManager.createTripWithResult(
+            title: self.title,
+            description: finalDescription,
+            startDate: self.startDate
+        )
+        
+        switch result {
+        case .success(let trip):
+            // Als aktive Reise setzen wenn gewünscht
+            if self.setAsActive {
+                await tripManager.setActiveTrip(trip)
             }
+            
+            self.isCreating = false
+            print("✅ TripCreationView: Reise erfolgreich erstellt: \(self.title)")
+            
+        case .noUserAvailable:
+            // Kein Fehler anzeigen, stattdessen UserCreationView öffnen
+            self.isCreating = false
+            print("📝 TripCreationView: Kein User vorhanden - öffne User-Erstellung")
+            
+        case .userValidationFailed:
+            self.showError(message: "Benutzer-Validierung fehlgeschlagen. Bitte versuche es erneut.")
+            self.isCreating = false
+            
+        case .saveFailed(let errorMessage):
+            self.showError(message: "Fehler beim Speichern: \(errorMessage)")
+            self.isCreating = false
+            
+        case .validationFailed(let errorMessage):
+            self.showError(message: "Validierung fehlgeschlagen: \(errorMessage)")
+            self.isCreating = false
         }
+        return result
     }
     
     // MARK: - Helper Methods

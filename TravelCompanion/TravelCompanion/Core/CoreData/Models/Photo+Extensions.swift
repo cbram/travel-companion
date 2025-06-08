@@ -91,6 +91,12 @@ extension Photo {
     /// Speichert UIImage lokal und setzt localURL
     func saveUIImage(_ image: UIImage, to directory: URL) -> Bool {
         let safeFilename = filename ?? "photo_\(UUID().uuidString.prefix(8)).jpg"
+        
+        // ✅ WICHTIG: filename-Feld setzen, wenn es nil war
+        if filename == nil {
+            filename = safeFilename
+        }
+        
         let fileURL = directory.appendingPathComponent(safeFilename)
         
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {

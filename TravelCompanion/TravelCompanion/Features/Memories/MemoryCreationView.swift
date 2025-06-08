@@ -22,11 +22,11 @@ struct MemoryCreationView: View {
                 VStack(spacing: 20) {
                     headerSection
                     
-                    // Trip Info (falls vorhanden)
-                    if let trip = viewModel.trip {
-                        tripInfoSection(for: trip)
-                    }
-                    
+                        // Trip Info (falls vorhanden)
+                        if let trip = viewModel.trip {
+                            tripInfoSection(for: trip)
+                        }
+                        
                     VStack(spacing: 16) {
                         titleSection
                         descriptionSection
@@ -78,7 +78,7 @@ struct MemoryCreationView: View {
                     if userManager.currentUser == nil {
                         showingUserCreation = true
                     } else {
-                        showingTripCreation = true
+                    showingTripCreation = true
                     }
                 }
                 Button("Abbrechen") {
@@ -108,6 +108,12 @@ struct MemoryCreationView: View {
                             viewModel.setupInitialData()
                         }
                     }
+            }
+            .sheet(isPresented: $viewModel.showingImagePicker) {
+                ImagePickerView(
+                    sourceType: viewModel.imageSourceType,
+                    selectedImage: $viewModel.selectedImage
+                )
             }
         }
         .onAppear {
@@ -257,12 +263,12 @@ struct MemoryCreationView: View {
                 .foregroundColor(.primary)
             
             if let selectedImage = viewModel.selectedImage {
-                // Selected Image Preview
+                // Selected Image Preview - FIXED: Instagram-Style Full Width
                 VStack(spacing: 8) {
                     Image(uiImage: selectedImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(height: 200)
+                        .frame(maxWidth: .infinity, maxHeight: 300) // ✅ Volle Breite, max Höhe für Instagram-Look
                         .clipped()
                         .cornerRadius(12)
                     
@@ -273,38 +279,28 @@ struct MemoryCreationView: View {
                     .foregroundColor(.red)
                 }
             } else {
-                // Photo Selection Buttons
+                // Buttons für Kamera und Galerie
                 HStack(spacing: 12) {
                     Button(action: {
                         viewModel.showCameraPicker()
                     }) {
-                        VStack(spacing: 8) {
-                            Image(systemName: "camera.fill")
-                                .font(.title2)
-                            Text("Kamera")
-                                .font(.caption)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(12)
+                        Label("Kamera", systemImage: "camera")
+                            .frame(maxWidth: .infinity)
                     }
-                    .disabled(!viewModel.isCameraAvailable)
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.selectedImage != nil)
                     
-                    Button(action: {
-                        viewModel.showPhotoPicker()
-                    }) {
-                        VStack(spacing: 8) {
-                            Image(systemName: "photo.fill")
-                                .font(.title2)
-                            Text("Galerie")
-                                .font(.caption)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(12)
+                    // Der PhotosPicker öffnet die Galerie direkt
+                    PhotosPicker(
+                        selection: $viewModel.photoPickerItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Label("Galerie", systemImage: "photo.on.rectangle")
+                            .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.selectedImage != nil)
                 }
             }
         }

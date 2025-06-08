@@ -14,6 +14,9 @@ struct EnhancedMemoryCreationView: View {
     @State private var isKeyboardVisible = false
     @State private var isViewInitialized = false
     
+    @State private var showPhotoSourceDialog = false
+    @State private var photoSource: PhotoSource? = nil
+    
     let trip: Trip
     let user: User
     
@@ -51,13 +54,6 @@ struct EnhancedMemoryCreationView: View {
                     .disabled(!viewModel.canSave || viewModel.isSaving)
                 }
             }
-            .sheet(isPresented: $viewModel.showingPhotoPicker) {
-                PhotoPicker(
-                    selectedImages: $viewModel.selectedImages,
-                    isPresented: $viewModel.showingPhotoPicker,
-                    maxSelections: 5
-                )
-            }
             .sheet(isPresented: $viewModel.showingLocationPicker) {
                 LocationPickerView(
                     selectedLocation: $viewModel.manualLocation,
@@ -93,6 +89,20 @@ struct EnhancedMemoryCreationView: View {
                 withAnimation(.easeOut(duration: 0.2)) {
                     isKeyboardVisible = false
                 }
+            }
+            // Sheet für PhotoPicker je nach Auswahl
+            .sheet(item: $photoSource) { source in
+                PhotoPicker(
+                    selectedImages: $viewModel.selectedImages,
+                    isPresented: Binding(
+                        get: { photoSource != nil },
+                        set: { if !$0 { photoSource = nil } }
+                    ),
+                    maxSelections: 5,
+                    allowsCamera: source == .camera,
+                    compressionQuality: 0.6,
+                    startMode: source
+                )
             }
         }
     }
@@ -383,16 +393,21 @@ struct EnhancedMemoryCreationView: View {
                 emptyPhotoState
             }
             
-            // Add Photo Button
+            // Neuer Add Photo Button mit Auswahl
             Button(action: {
-                viewModel.showingPhotoPicker = true
+                showPhotoSourceDialog = true
             }) {
-                Label("Fotos hinzufügen", systemImage: "plus.circle.fill")
+                Label("Foto hinzufügen", systemImage: "plus.circle.fill")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
             .buttonStyle(.bordered)
             .disabled(viewModel.selectedImages.count >= 5)
+            .confirmationDialog("Foto hinzufügen", isPresented: $showPhotoSourceDialog, titleVisibility: .visible) {
+                Button("Kamera") { photoSource = .camera }
+                Button("Galerie") { photoSource = .gallery }
+                Button("Abbrechen", role: .cancel) { }
+            }
         }
         .padding()
         .background(Color(.systemGray6))

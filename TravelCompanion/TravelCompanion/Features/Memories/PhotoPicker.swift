@@ -3,6 +3,16 @@ import PhotosUI
 import AVFoundation
 import UIKit
 
+enum PhotoSource: Identifiable {
+    case camera, gallery
+    var id: String {
+        switch self {
+        case .camera: return "camera"
+        case .gallery: return "gallery"
+        }
+    }
+}
+
 /// Erweiterte PhotoPicker-Komponente für Memory-Erstellung - PERFORMANCE OPTIMIZED
 /// Unterstützt Multiple Selection, Kamera, Komprimierung und Offline-Storage
 struct PhotoPicker: View {
@@ -13,6 +23,7 @@ struct PhotoPicker: View {
     let maxSelections: Int
     let allowsCamera: Bool
     let compressionQuality: Double
+    let startMode: PhotoSource?
     
     // PERFORMANCE: State für UI-Updates reduzieren
     @State private var isViewReady = false
@@ -22,13 +33,15 @@ struct PhotoPicker: View {
         isPresented: Binding<Bool>,
         maxSelections: Int = 5,
         allowsCamera: Bool = true,
-        compressionQuality: Double = 0.6 // Reduziert von 0.8 für bessere Performance
+        compressionQuality: Double = 0.6,
+        startMode: PhotoSource? = nil
     ) {
         self._selectedImages = selectedImages
         self._isPresented = isPresented
         self.maxSelections = maxSelections
         self.allowsCamera = allowsCamera
         self.compressionQuality = compressionQuality
+        self.startMode = startMode
     }
     
     var body: some View {
@@ -58,6 +71,16 @@ struct PhotoPicker: View {
             }
             .onAppear {
                 setupView()
+                // Automatisches Öffnen je nach Startmodus
+                if let mode = startMode {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        if mode == .camera {
+                            viewModel.showCameraPicker()
+                        } else if mode == .gallery {
+                            viewModel.showPhotoPicker()
+                        }
+                    }
+                }
             }
             .sheet(isPresented: $viewModel.showingImagePicker) {
                 ImagePickerView(
@@ -226,46 +249,49 @@ struct PhotoPicker: View {
     }
     
     private var actionButtons: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                if allowsCamera && viewModel.isCameraAvailable {
+        // Action-Buttons nur anzeigen, wenn kein Startmodus gesetzt ist (also Rückkehr aus Picker)
+        if startMode == nil {
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    if allowsCamera && viewModel.isCameraAvailable {
+                        Button(action: {
+                            viewModel.showCameraPicker()
+                        }) {
+                            Label("Kamera", systemImage: "camera.fill")
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(selectedImages.count >= maxSelections || viewModel.isLoading)
+                    }
+                    
                     Button(action: {
-                        viewModel.showCameraPicker()
+                        viewModel.showPhotoPicker()
                     }) {
-                        Label("Kamera", systemImage: "camera.fill")
+                        Label("Galerie", systemImage: "photo.on.rectangle")
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                     }
                     .buttonStyle(.bordered)
                     .disabled(selectedImages.count >= maxSelections || viewModel.isLoading)
                 }
-                
-                Button(action: {
-                    viewModel.showPhotoPicker()
-                }) {
-                    Label("Galerie", systemImage: "photo.on.rectangle")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(.bordered)
-                .disabled(selectedImages.count >= maxSelections || viewModel.isLoading)
-            }
-            
-            // PERFORMANCE: Conditional rendering
-            if !selectedImages.isEmpty {
-                Button(action: {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        clearAllImages()
+                if !selectedImages.isEmpty {
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            clearAllImages()
+                        }
+                    }) {
+                        Text("Alle entfernen")
+                            .foregroundColor(.red)
                     }
-                }) {
-                    Text("Alle entfernen")
-                        .foregroundColor(.red)
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
             }
+            .padding()
+            .background(Color(.systemBackground)) as! EmptyView
+        } else {
+            EmptyView()
         }
-        .padding()
-        .background(Color(.systemBackground))
     }
     
     // MARK: - Helper Methods

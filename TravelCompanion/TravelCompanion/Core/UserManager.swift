@@ -2,7 +2,8 @@ import Foundation
 import CoreData
 import Combine
 
-/// Zentrale Verwaltung für User-bezogene Operationen
+/// Verwaltet den aktuellen User der App
+@MainActor
 class UserManager: ObservableObject {
     
     // MARK: - Singleton

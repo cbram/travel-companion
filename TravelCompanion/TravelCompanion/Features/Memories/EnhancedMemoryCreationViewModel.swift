@@ -505,10 +505,20 @@ class EnhancedMemoryCreationViewModel: ObservableObject {
         let fileSizeKB = imageData.count / 1024
         print("📷 EnhancedMemoryCreationViewModel: Bild komprimiert - \(fileSizeKB)KB")
         
+        // ✅ KRITISCHER FIX: Verwende konsistentes Photos-Verzeichnis
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let imageURL = documentsPath.appendingPathComponent(filename)
+        let photosDirectory = documentsPath.appendingPathComponent("Photos")
+        
+        // ✅ WICHTIG: Directory erstellen falls es nicht existiert
+        if !FileManager.default.fileExists(atPath: photosDirectory.path) {
+            try FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true, attributes: nil)
+            print("✅ EnhancedMemoryCreationViewModel: Photos Directory erstellt")
+        }
+        
+        let imageURL = photosDirectory.appendingPathComponent(filename)
         
         try imageData.write(to: imageURL)
+        print("✅ EnhancedMemoryCreationViewModel: Bild gespeichert in: \(imageURL.path)")
         
         return imageURL.path
     }

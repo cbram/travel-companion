@@ -1,7 +1,9 @@
-import Foundation
-import CoreData
+@preconcurrency import Foundation
+@preconcurrency import CoreData
+@preconcurrency import UIKit
 
 /// Zentrale Verwaltung des Core Data Stacks mit Performance-Optimierungen
+@MainActor
 class CoreDataManager {
     
     // MARK: - Singleton
@@ -269,30 +271,7 @@ class CoreDataManager {
     // MARK: - Memory Management (Footsteps)
     
     @discardableResult
-    func createMemory(title: String, content: String?, latitude: Double, longitude: Double, author: User, trip: Trip) -> Memory {
-        // Performance-optimierte Erstellung im Main Context
-        let startTime = CFAbsoluteTimeGetCurrent()
-        
-        // SICHERE Koordinaten-Validierung und Bereinigung BEVOR Core Data Verwendung
-        guard LocationValidator.isValidCoordinate(latitude: latitude, longitude: longitude) else {
-            print("⚠️ CoreDataManager: Ungültige Koordinaten bereinigt: \(latitude), \(longitude)")
-            let sanitized = LocationValidator.sanitizeCoordinates(latitude: latitude, longitude: longitude)
-            
-            let memory = Memory(context: viewContext)
-            memory.id = UUID()
-            memory.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-            memory.content = content?.trimmingCharacters(in: .whitespacesAndNewlines)
-            memory.latitude = sanitized.lat
-            memory.longitude = sanitized.lon
-            memory.timestamp = Date()
-            memory.createdAt = Date()
-            memory.author = author
-            memory.trip = trip
-            
-            print("✅ CoreDataManager: Memory mit bereinigten Koordinaten erstellt: \(sanitized.lat), \(sanitized.lon)")
-            return memory
-        }
-        
+    func createMemory(title: String, content: String?, latitude: Double, longitude: Double, author: User, trip: Trip, photo: UIImage?) -> Memory {
         let memory = Memory(context: viewContext)
         memory.id = UUID()
         memory.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -304,18 +283,73 @@ class CoreDataManager {
         memory.author = author
         memory.trip = trip
         
-        // Performance-Monitoring
-        let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
-        if timeElapsed > 0.05 { // Warnung bei > 50ms
-            print("⚠️ CoreDataManager: Langsame Memory-Erstellung: \(String(format: "%.3f", timeElapsed))s")
-        }
-        
-        // Sofortige Validierung der Relationships
-        if memory.author == nil || memory.trip == nil {
-            print("⚠️ CoreDataManager: Memory-Relationships nicht korrekt gesetzt")
+        if let image = photo {
+            print("📷 CoreDataManager: Erstelle Photo für Memory...")
+            let photoEntity = Photo(context: viewContext)
+            photoEntity.id = UUID()
+            photoEntity.createdAt = Date()
+            
+            // ✅ KRITISCHER FIX: Konsistente Photo-Directory Verwendung
+            let photosDirectory = getPhotosDirectory()
+            
+            // ✅ KRITISCHER FIX: Setze filename BEVOR saveUIImage aufgerufen wird
+            let timestamp = DateFormatter.coreDataFilenameFormatter.string(from: Date())
+            let uniqueFilename = "photo_\(timestamp)_\(UUID().uuidString.prefix(8)).jpg"
+            photoEntity.filename = uniqueFilename
+            
+            print("📷 CoreDataManager: Speichere Photo mit Filename: \(uniqueFilename)")
+            print("📷 CoreDataManager: Verwende Photos Directory: \(photosDirectory.path)")
+            
+            if photoEntity.saveUIImage(image, to: photosDirectory) {
+                memory.addToPhotos(photoEntity)
+                print("✅ CoreDataManager: Foto erfolgreich gespeichert und zur Memory hinzugefügt.")
+                print("   - Filename: \(photoEntity.filename ?? "nil")")
+                print("   - LocalURL: \(photoEntity.localURL ?? "nil")")
+                
+                // ✅ ZUSÄTZLICHE Validierung: Prüfe ob File wirklich existiert
+                if let localURL = photoEntity.localURL {
+                    let fileExists = FileManager.default.fileExists(atPath: localURL)
+                    print(fileExists ? "✅ CoreDataManager: Photo-Datei existiert auf Disk" : "❌ CoreDataManager: Photo-Datei existiert NICHT auf Disk!")
+                    
+                    // ✅ ZUSÄTZLICHER DEBUG: File-Größe und Berechtigungen prüfen
+                    if fileExists {
+                        do {
+                            let attributes = try FileManager.default.attributesOfItem(atPath: localURL)
+                            let fileSize = attributes[.size] as? Int64 ?? 0
+                            print("📷 CoreDataManager: Photo-Datei Größe: \(fileSize) bytes")
+                        } catch {
+                            print("⚠️ CoreDataManager: Fehler beim Lesen der Datei-Attribute: \(error)")
+                        }
+                    }
+                } else {
+                    print("❌ CoreDataManager: LocalURL ist nil!")
+                }
+                
+            } else {
+                print("❌ CoreDataManager: Fehler beim Speichern des Fotos.")
+                viewContext.delete(photoEntity)
+            }
         }
         
         return memory
+    }
+    
+    /// Konsistente Photos Directory Erstellung
+    func getPhotosDirectory() -> URL {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let photosDirectory = documentsDirectory.appendingPathComponent("Photos")
+        
+        // ✅ WICHTIG: Directory erstellen falls es nicht existiert
+        if !FileManager.default.fileExists(atPath: photosDirectory.path) {
+            do {
+                try FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true, attributes: nil)
+                print("✅ CoreDataManager: Photos Directory erstellt: \(photosDirectory.path)")
+            } catch {
+                print("❌ CoreDataManager: Fehler beim Erstellen des Photos Directory: \(error)")
+            }
+        }
+        
+        return photosDirectory
     }
     
     /// Performance-optimierte Memory-Erstellung mit sofortigem Save
@@ -329,7 +363,7 @@ class CoreDataManager {
         }
         
         // SYNCHRONOUS Erstellung im Main Context für bessere Stabilität
-        let memory = createMemory(title: title, content: content, latitude: latitude, longitude: longitude, author: author, trip: trip)
+        let memory = createMemory(title: title, content: content, latitude: latitude, longitude: longitude, author: author, trip: trip, photo: nil)
         
         // SOFORTIGER synchroner Save für Konsistenz
         let success = save()
@@ -447,7 +481,7 @@ class CoreDataManager {
     // Alias methods for consistency with Footstep naming
     @discardableResult
     func createFootstep(title: String, content: String?, latitude: Double, longitude: Double, author: User, trip: Trip) -> Memory {
-        return createMemory(title: title, content: content, latitude: latitude, longitude: longitude, author: author, trip: trip)
+        return createMemory(title: title, content: content, latitude: latitude, longitude: longitude, author: author, trip: trip, photo: nil)
     }
     
     func fetchFootsteps(for trip: Trip) -> [Memory] {
@@ -713,8 +747,8 @@ class CoreDataManager {
         
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.5, execute: timeoutWorkItem)
         
-        // OPTIMIERTE Background-Task mit vereinfachtem Fetch
-        DispatchQueue.global(qos: .userInitiated).async {
+        // FIXED: Verwende Core Data's performBackgroundTask für Concurrency-Safety
+        persistentContainer.performBackgroundTask { backgroundContext in
             do {
                 // DIREKTE Memory-Suche mit Trip ObjectID statt Trip-Objekt-Suche
                 let request = Memory.fetchRequest()
@@ -723,9 +757,6 @@ class CoreDataManager {
                 request.returnsObjectsAsFaults = false // Eager loading
                 request.fetchLimit = 50 // Limit für Performance
                 request.fetchBatchSize = 20 // Batch-Processing
-                
-                // BACKGROUND Context für bessere Performance
-                let backgroundContext = self.persistentContainer.newBackgroundContext()
                 
                 let memories = try backgroundContext.fetch(request)
                 
@@ -990,4 +1021,13 @@ class CoreDataManager {
             print("✅ Keine Probleme gefunden - Datenbank ist in Ordnung")
         }
     }
+}
+
+// MARK: - DateFormatter Extension for CoreDataManager
+private extension DateFormatter {
+    static let coreDataFilenameFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        return formatter
+    }()
 } 

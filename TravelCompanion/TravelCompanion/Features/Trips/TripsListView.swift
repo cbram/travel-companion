@@ -45,14 +45,16 @@ struct TripsListView: View {
             .navigationBarTitleDisplayMode(.large)
             .refreshable {
                 // Refresh über TripManager
-                tripManager.refreshTrips()
+                await tripManager.refreshTrips()
             }
             .sheet(isPresented: $showingTripCreation) {
                 TripCreationView()
             }
             .alert("Reise löschen", isPresented: $viewModel.showDeleteConfirmation) {
                 Button("Löschen", role: .destructive) {
-                    viewModel.confirmDelete()
+                    Task {
+                        await viewModel.confirmDelete()
+                    }
                 }
                 Button("Abbrechen", role: .cancel) { }
             } message: {
@@ -60,7 +62,9 @@ struct TripsListView: View {
             }
             .confirmationDialog("Reise verwalten", isPresented: $showingQuickActions, presenting: selectedTrip) { trip in
                 Button("Reise beenden") {
-                    tripManager.endCurrentTrip()
+                    Task {
+                        await tripManager.endCurrentTrip()
+                    }
                 }
                 
                 Button("Bearbeiten") {
@@ -68,7 +72,9 @@ struct TripsListView: View {
                 }
                 
                 Button("Löschen", role: .destructive) {
-                    tripManager.deleteTrip(trip)
+                    Task {
+                        await tripManager.deleteTrip(trip)
+                    }
                 }
                 
                 Button("Abbrechen", role: .cancel) { }
@@ -152,7 +158,9 @@ struct TripsListView: View {
     private func deleteTrips(offsets: IndexSet) {
         for index in offsets {
             let trip = tripManager.allTrips[index]
-            tripManager.deleteTrip(trip)
+            Task {
+                await tripManager.deleteTrip(trip)
+            }
         }
     }
     
@@ -291,8 +299,8 @@ class TripsListViewModel: ObservableObject {
         tripManager = manager
     }
     
-    func selectTrip(_ trip: Trip) {
-        tripManager?.setActiveTrip(trip)
+    func selectTrip(_ trip: Trip) async {
+        await tripManager?.setActiveTrip(trip)
     }
     
     func deleteTrip(_ trip: Trip) {
@@ -300,9 +308,9 @@ class TripsListViewModel: ObservableObject {
         showDeleteConfirmation = true
     }
     
-    func confirmDelete() {
+    func confirmDelete() async {
         guard let trip = tripToDelete else { return }
-        tripManager?.deleteTrip(trip)
+        await tripManager?.deleteTrip(trip)
         tripToDelete = nil
     }
 }

@@ -28,11 +28,11 @@ class PhotoFileManager: ObservableObject {
     private let persistenceController = PersistenceController.shared
     
     // Directory Paths
-    private lazy var documentsDirectory: URL = {
+    public lazy var documentsDirectory: URL = {
         return fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
     }()
     
-    private lazy var photosDirectory: URL = {
+    public lazy var photosDirectory: URL = {
         let url = documentsDirectory.appendingPathComponent("Photos")
         createDirectoryIfNeeded(url)
         return url

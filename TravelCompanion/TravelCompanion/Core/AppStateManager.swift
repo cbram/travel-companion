@@ -13,6 +13,7 @@ import CoreData
 import UIKit
 
 /// Zentraler Manager für App Lifecycle Management und Background Tasks
+@MainActor
 class AppStateManager: ObservableObject {
     
     // MARK: - Singleton
@@ -401,10 +402,12 @@ class AppStateManager: ObservableObject {
         endBackgroundTask()
         backgroundTimer?.invalidate()
         backgroundTimer = nil
-        DebugLogger.shared.log("🧹 AppStateManager Cleanup abgeschlossen")
+        DebugLogger.shared.log("⚡️ AppStateManager Cleanup abgeschlossen")
     }
     
     deinit {
-        cleanup()
+        // Der Aufruf wird entfernt, da cleanup() bereits von
+        // handleAppWillTerminate() aufgerufen wird und deinit
+        // nicht auf eine @MainActor-isolierte Methode zugreifen kann.
     }
 } 

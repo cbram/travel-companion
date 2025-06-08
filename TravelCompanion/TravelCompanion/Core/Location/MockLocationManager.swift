@@ -74,7 +74,9 @@ class MockLocationManager: LocationManager {
     // MARK: - Mock Location Updates
     private func startMockLocationUpdates() {
         mockTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
-            self?.updateMockLocation()
+            Task { @MainActor [weak self] in
+                self?.updateMockLocation()
+            }
         }
     }
     
@@ -126,7 +128,7 @@ class MockLocationManager: LocationManager {
     }
     
     deinit {
-        stopMockLocationUpdates()
+        mockTimer?.invalidate()
     }
 }
 

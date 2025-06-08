@@ -55,7 +55,9 @@ struct TripManagementView: View {
                         }
                     } else {
                         Button(action: {
-                            tripManager.setActiveTrip(trip)
+                            Task {
+                                await tripManager.setActiveTrip(trip)
+                            }
                         }) {
                             Label("Reise aktivieren", systemImage: "play.circle")
                         }
@@ -80,8 +82,10 @@ struct TripManagementView: View {
         }
         .alert("Reise beenden", isPresented: $showingEndTripAlert) {
             Button("Beenden", role: .destructive) {
-                tripManager.endCurrentTrip()
-                presentationMode.wrappedValue.dismiss()
+                Task {
+                    await tripManager.endCurrentTrip()
+                    presentationMode.wrappedValue.dismiss()
+                }
             }
             Button("Abbrechen", role: .cancel) { }
         } message: {
@@ -89,8 +93,10 @@ struct TripManagementView: View {
         }
         .alert("Reise löschen", isPresented: $showingDeleteAlert) {
             Button("Löschen", role: .destructive) {
-                tripManager.deleteTrip(trip)
-                presentationMode.wrappedValue.dismiss()
+                Task {
+                    await tripManager.deleteTrip(trip)
+                    presentationMode.wrappedValue.dismiss()
+                }
             }
             Button("Abbrechen", role: .cancel) { }
         } message: {
@@ -184,7 +190,11 @@ struct TripManagementView: View {
                         title: "Aktivieren",
                         icon: "play.circle.fill",
                         color: .green,
-                        action: { tripManager.setActiveTrip(trip) }
+                        action: {
+                            Task {
+                                await tripManager.setActiveTrip(trip)
+                            }
+                        }
                     )
                 }
                 
@@ -195,6 +205,19 @@ struct TripManagementView: View {
                     color: .blue,
                     action: { showingEditSheet = true }
                 )
+
+                // GPS-Track anzeigen Button
+                if #available(iOS 17.0, *) {
+                    NavigationLink(destination: GPSTrackView(trip: trip)) {
+                        TripActionButton(
+                            title: "GPS-Track",
+                            icon: "map.fill",
+                            color: .purple,
+                            action: {}
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle()) // Verhindert, dass der Link wie ein normaler Button aussieht
+                }
             }
         }
     }
@@ -240,47 +263,102 @@ struct TripManagementView: View {
     private var memoriesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Neueste Memories")
+                Text("Memories")
                     .font(.headline)
                     .foregroundColor(.primary)
                 
                 Spacer()
                 
-                if trip.memoriesCount > 0 {
-                    Button("Alle anzeigen") {
-                        // Navigate to all memories
-                    }
-                    .font(.caption)
-                    .foregroundColor(.blue)
+                Button("Alle anzeigen") {
+                    // TODO: Navigation zu einer vollen Memories-Liste
                 }
+                .font(.subheadline)
             }
             
-            if trip.memoriesCount == 0 {
-                VStack(spacing: 12) {
-                    Image(systemName: "location.circle")
-                        .font(.largeTitle)
-                        .foregroundColor(.gray)
-                    
-                    Text("Noch keine Memories")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Text("Starten Sie Ihre Reise und sammeln Sie Erinnerungen!")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
-            } else {
-                // Zeige die neuesten 3 Memories
-                LazyVGrid(columns: [GridItem(.flexible())], spacing: 8) {
-                    ForEach(trip.recentMemories(limit: 3), id: \.objectID) { memory in
-                        TripMemoryRowView(memory: memory)
+            // Memories List
+            if !trip.memoriesArray.isEmpty {
+                LazyVStack(spacing: 20) {
+                    ForEach(trip.memoriesArray) { memory in
+                        memoryCardView(for: memory)
                     }
                 }
+            } else {
+                emptyMemoriesView
             }
         }
+    }
+    
+    private func memoryHeader(for memory: Memory) -> some View {
+        HStack(spacing: 12) {
+            Text(memory.author?.initials ?? "U")
+                .font(.callout)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .frame(width: 36, height: 36)
+                .background(Color.blue)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading) {
+                Text(memory.author?.displayName ?? "Unbekannter Nutzer")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Text("📍 \(memory.location.formattedCoordinates)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+        }
+    }
+    
+    private func memoryCardView(for memory: Memory) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Memory Header
+            memoryHeader(for: memory)
+            
+            // Memory Image (falls vorhanden) - FIXED: Instagram-Style Full Width
+            if let photo = memory.photosArray.first, let uiImage = photo.loadUIImage() {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(maxWidth: .infinity, maxHeight: 300) // ✅ Volle Breite, max Höhe für Instagram-Look
+                    .clipped()
+                    .cornerRadius(12)
+                    .shadow(radius: 4)
+            }
+            
+            // Memory Content
+            VStack(alignment: .leading, spacing: 8) {
+                Text(memory.formattedTitle)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                
+                Text(memory.formattedTimestamp)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    private var emptyMemoriesView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "location.circle")
+                .font(.largeTitle)
+                .foregroundColor(.gray)
+            
+            Text("Noch keine Memories")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Text("Starten Sie Ihre Reise und sammeln Sie Erinnerungen!")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
     
     // MARK: - Computed Properties
@@ -444,7 +522,9 @@ struct TripEditView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Speichern") {
-                        saveTrip()
+                        Task {
+                           await saveTrip()
+                        }
                     }
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
@@ -461,7 +541,7 @@ struct TripEditView: View {
         startDate = trip.startDate ?? Date()
     }
     
-    private func saveTrip() {
+    private func saveTrip() async {
         isSaving = true
         
         // Update trip properties
@@ -472,7 +552,7 @@ struct TripEditView: View {
         // Save to Core Data
         if CoreDataManager.shared.save() {
             print("✅ Trip erfolgreich aktualisiert")
-            tripManager.refreshTrips()
+            await tripManager.refreshTrips()
             presentationMode.wrappedValue.dismiss()
         } else {
             print("❌ Fehler beim Speichern des Trips")

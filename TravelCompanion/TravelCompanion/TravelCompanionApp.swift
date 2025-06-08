@@ -12,14 +12,19 @@ import UserNotifications
 @main
 struct TravelCompanionApp: App {
     let persistenceController = PersistenceController.shared
-    @StateObject private var locationManager = LocationManager.shared
-    @StateObject private var appStateManager = AppStateManager.shared
-    @StateObject private var debugLogger = DebugLogger.shared
-    @StateObject private var photoFileManager = PhotoFileManager.shared
-    @StateObject private var offlineMemoryCreator = OfflineMemoryCreator.shared
-    @StateObject private var userManager = UserManager.shared
-    @StateObject private var authenticationState = AuthenticationState.shared
+    let locationManager = LocationManager.shared
+    let appStateManager = AppStateManager.shared
+    let debugLogger = DebugLogger.shared
+    let photoFileManager = PhotoFileManager.shared
+    let offlineMemoryCreator = OfflineMemoryCreator.shared
+    let userManager = UserManager.shared
+    let authenticationState = AuthenticationState.shared
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // App-Setup direkt beim App-Start durchführen
+        setupApp()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -33,10 +38,6 @@ struct TravelCompanionApp: App {
                 .environmentObject(debugLogger)
                 .environmentObject(photoFileManager)
                 .environmentObject(offlineMemoryCreator)
-                .onAppear {
-                    // App-Setup beim ersten Start
-                    setupApp()
-                }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
                     // App wird inaktiv - speichere wichtige Daten
                     appStateManager.handleAppWillResignActive()
@@ -93,7 +94,9 @@ struct TravelCompanionApp: App {
         #if DEBUG
         DebugLogger.shared.logLevel = .verbose
         DebugLogger.shared.log("🚀 TravelCompanion App gestartet - Debug Mode aktiv")
-        DebugLogger.shared.log("👤 UserManager Status: \(userManager.currentUser?.formattedDisplayName ?? "Kein User")")
+        // UserManager ist hier möglicherweise noch nicht vollständig initialisiert,
+        // daher den Log-Eintrag an eine sicherere Stelle verschieben oder entfernen.
+        // DebugLogger.shared.log("👤 UserManager Status: \(userManager.currentUser?.formattedDisplayName ?? "Kein User")")
         #endif
     }
 }

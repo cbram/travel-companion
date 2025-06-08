@@ -1,8 +1,10 @@
 import SwiftUI
 import CoreLocation
+import Foundation
 
 /// Test-Script für GPS-Funktionalität im iOS Simulator
 /// Simuliert verschiedene Tracking-Szenarien und GPS-Bedingungen
+@MainActor
 struct GPSTestScript {
     
     static let shared = GPSTestScript()
